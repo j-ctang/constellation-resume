@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { SkyEntry } from '../sky.config'
 import { realTitle } from '../lib/format'
 import { backgroundStars, emptySpot, layoutSky, skyArea } from '../sky/layout'
-import { buildBackground, drawBgStars, drawFigure, drawPulse, drawRegionLabel } from '../sky/render'
+import { drawingReducer, initialDrawing } from '../sky/drawing'
+import { buildBackground, drawBgStars, drawFigure, drawPulse, drawRegionLabel, drawUser } from '../sky/render'
 
 export interface SkyCanvasProps {
   entries: SkyEntry[]
@@ -38,8 +39,15 @@ export default function SkyCanvas(props: SkyCanvasProps) {
   const byId = useMemo(() => new Map(entries.map(e => [e.id, e])), [entries])
 
   // The rAF loop reads the latest props through this ref instead of restarting each render.
-  const live = useRef({ props, figures, labels, bgStars, pulseAt, byId })
-  useEffect(() => { live.current = { props, figures, labels, bgStars, pulseAt, byId } })
+  const [drawing, dispatch] = useReducer(drawingReducer, initialDrawing)
+  const live = useRef({ props, figures, labels, bgStars, pulseAt, byId, drawing })
+  useEffect(() => { live.current = { props, figures, labels, bgStars, pulseAt, byId, drawing } })
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dispatch({ type: 'finish' }) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -52,7 +60,7 @@ export default function SkyCanvas(props: SkyCanvasProps) {
     const start = performance.now()
     let raf = 0
     const frame = (now: number) => {
-      const { props: p, figures: figs, labels: labs, bgStars: stars, pulseAt: pulse, byId: map } = live.current
+      const { props: p, figures: figs, labels: labs, bgStars: stars, pulseAt: pulse, byId: map, drawing: user } = live.current
       const t = now - start
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.drawImage(bg, 0, 0)
@@ -68,6 +76,7 @@ export default function SkyCanvas(props: SkyCanvasProps) {
           dim: p.hotId !== null && p.hotId !== f.id,
         })
       })
+      drawUser(ctx, user, now, p.reducedMotion)
       if (p.showPulse) drawPulse(ctx, pulse, now, p.reducedMotion)
       raf = requestAnimationFrame(frame)
     }
@@ -77,7 +86,18 @@ export default function SkyCanvas(props: SkyCanvasProps) {
 
   return (
     <>
-      <canvas ref={canvasRef} className="sky" aria-hidden="true" onClick={() => onEmptyClick()} />
+      <canvas
+        ref={canvasRef}
+        className="sky"
+        aria-hidden="true"
+        onClick={e => {
+          if (props.drawingEnabled) {
+            const r = e.currentTarget.getBoundingClientRect()
+            dispatch({ type: 'place', p: { x: e.clientX - r.left, y: e.clientY - r.top } })
+          }
+          onEmptyClick()
+        }}
+      />
       <div className="hotspots" role="group" aria-label="Constellations">
         {figures.map(f => {
           const e = byId.get(f.id)
@@ -99,6 +119,11 @@ export default function SkyCanvas(props: SkyCanvasProps) {
           )
         })}
       </div>
+      {(drawing.figures.length > 0 || drawing.active.length > 0) && (
+        <button type="button" className="tool clear-mine" onClick={() => dispatch({ type: 'clear' })}>
+          Clear my stars
+        </button>
+      )}
     </>
   )
 }

@@ -50,4 +50,30 @@ describe('App', () => {
     await user.keyboard('{Escape}')
     expect(screen.getByRole('navigation', { name: /index of constellations/i })).toBeInTheDocument()
   })
+
+  it('shows onboarding on first visit and remembers dismissal', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<App />)
+    expect(screen.getByText(/this sky is yours too/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /understood/i }))
+    expect(screen.queryByText(/this sky is yours too/i)).toBeNull()
+    unmount()
+    render(<App />)
+    expect(screen.queryByText(/this sky is yours too/i)).toBeNull()
+  })
+
+  it('reopens onboarding from the ? button', async () => {
+    localStorage.setItem('constellation-resume:onboarded', '1')
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /how to draw/i }))
+    expect(screen.getByText(/this sky is yours too/i)).toBeInTheDocument()
+  })
+
+  it('dismisses onboarding on the first sky click', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(container.querySelector('canvas.sky')!)
+    expect(screen.queryByText(/this sky is yours too/i)).toBeNull()
+  })
 })

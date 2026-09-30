@@ -132,3 +132,24 @@ body {
   background: transparent; cursor: pointer;
 }
 .hotspot:focus-visible { outline: 1px dashed var(--gold-hi); outline-offset: 4px }
+
+/* onboarding toast + help */
+.onboard {
+  position: absolute; left: calc((100% - var(--panel-w) - 40px) / 2); bottom: calc(var(--edge) + 22px); transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 4;
+  padding: 14px 24px; max-width: min(460px, calc(100vw - 40px)); text-align: center;
+  background: rgba(9, 12, 34, .86); border: 1px solid rgba(232, 200, 114, .45);
+  box-shadow: inset 0 0 0 4px rgba(6, 8, 24, .6), inset 0 0 0 5px rgba(232, 200, 114, .12), 0 18px 40px -18px rgba(0, 0, 0, .9);
+  animation: onboard-in .6s cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes onboard-in { from { opacity: 0; transform: translate(-50%, 14px) } to { opacity: 1; transform: translate(-50%, 0) } }
+.onboard .t1 { font-size: 12px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-hi) }
+.onboard .t2 { font-style: italic; color: #cfcbe0; font-size: 14.5px; line-height: 1.45 }
+.help {
+  position: absolute; top: 20px; right: 20px; z-index: 5; width: 26px; height: 26px; border-radius: 50%;
+  border: 1px solid rgba(232, 200, 114, .5); background: rgba(9, 12, 34, .8); color: var(--gold-hi);
+  font: inherit; font-size: 13px; cursor: pointer; display: grid; place-items: center;
+}
+.help:hover { border-color: var(--gold) }
+.clear-mine { position: absolute; left: calc((100% - var(--panel-w) - 40px) / 2); transform: translateX(-50%); bottom: calc(var(--edge) + 22px); z-index: 3 }
+@media (prefers-reduced-motion: reduce) { .onboard { animation: none } }

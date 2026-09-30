@@ -1,4 +1,5 @@
 import type { BgStar, Figure, Point, RegionLabel } from './layout'
+import type { DrawingState } from './drawing'
 import { mulberry32 } from './rng'
 
 const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",P052,"URW Palladio L",Georgia,serif'
@@ -117,4 +118,24 @@ export function drawPulse(ctx: CanvasRenderingContext2D, p: Point, now: number, 
   ctx.beginPath(); ctx.arc(p.x, p.y, 6 + t * 18, 0, TAU); ctx.stroke()
   ctx.fillStyle = '#f6e3a8'
   ctx.beginPath(); ctx.arc(p.x, p.y, 2.4, 0, TAU); ctx.fill()
+}
+
+export function drawUser(ctx: CanvasRenderingContext2D, s: DrawingState, now: number, reduced: boolean) {
+  const pulse = reduced ? 0.85 : 0.65 + 0.35 * Math.sin(now * 0.006)
+  const figs: [Point[], boolean][] = [...s.figures.map(f => [f, false] as [Point[], boolean]), [s.active, true]]
+  ctx.lineCap = 'round'
+  for (const [pts, active] of figs) {
+    for (let i = 1; i < pts.length; i++) {
+      ctx.strokeStyle = gold(0.16); ctx.lineWidth = 5
+      line(ctx, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y)
+      ctx.strokeStyle = active ? `rgba(246,227,168,${pulse})` : gold(0.8); ctx.lineWidth = 1.2
+      line(ctx, pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y)
+    }
+    for (const p of pts) {
+      ctx.fillStyle = '#fff4de'
+      ctx.beginPath(); ctx.arc(p.x, p.y, 2.2, 0, TAU); ctx.fill()
+      ctx.strokeStyle = gold(0.6); ctx.lineWidth = 0.7
+      ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, TAU); ctx.stroke()
+    }
+  }
 }

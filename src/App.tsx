@@ -5,6 +5,8 @@ import Frame from './components/Frame'
 import Masthead from './components/Masthead'
 import SidePanel from './components/SidePanel'
 import SkyCanvas from './components/SkyCanvas'
+import Onboarding from './components/Onboarding'
+import { ONBOARD_KEY, readFlag, writeFlag } from './lib/storage'
 
 export default function App() {
   const mobile = useMediaQuery('(max-width: 760px)')
@@ -14,7 +16,14 @@ export default function App() {
   const selected = ENTRIES.find(e => e.id === selectedId) ?? null
   const hotId = hoverId ?? selectedId
 
-  const select = (id: string) => { setSelectedId(id); setHoverId(null) }
+  const [onboardOpen, setOnboardOpen] = useState(() => !readFlag(ONBOARD_KEY))
+  const dismissOnboarding = () => {
+    if (!onboardOpen) return
+    setOnboardOpen(false)
+    writeFlag(ONBOARD_KEY)
+  }
+
+  const select = (id: string) => { setSelectedId(id); setHoverId(null); dismissOnboarding() }
   const back = () => setSelectedId(null)
 
   useEffect(() => {
@@ -32,12 +41,12 @@ export default function App() {
         hotId={hotId}
         selectedId={selectedId}
         drawingEnabled
-        showPulse={false}
+        showPulse={onboardOpen}
         onSelect={select}
         onHover={setHoverId}
-        onEmptyClick={() => {}}
+        onEmptyClick={dismissOnboarding}
       />
-      <Frame onHelp={() => {}} />
+      <Frame onHelp={() => setOnboardOpen(true)} />
       <Masthead />
       <SidePanel
         entries={ENTRIES}
@@ -50,6 +59,7 @@ export default function App() {
         onBack={back}
         onSheetChange={() => {}}
       />
+      <Onboarding open={onboardOpen} onDismiss={dismissOnboarding} />
     </main>
   )
 }
