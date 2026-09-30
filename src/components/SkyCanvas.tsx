@@ -44,9 +44,13 @@ export default function SkyCanvas(props: SkyCanvasProps) {
   useEffect(() => { live.current = { props, figures, labels, bgStars, pulseAt, byId, drawing } })
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') dispatch({ type: 'finish' }) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || live.current.drawing.active.length === 0) return
+      e.preventDefault()
+      dispatch({ type: 'finish' })
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   }, [])
 
   useEffect(() => {

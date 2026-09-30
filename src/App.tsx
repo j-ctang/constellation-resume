@@ -32,21 +32,43 @@ export default function App() {
     dismissOnboarding()
     if (mobile && sheetOpen) { setSelectedId(null); setSheetOpen(false) }
   }
-  const back = () => setSelectedId(null)
+  const pendingFocus = useRef<string | null>(null)
+  const back = () => {
+    if (selectedId && (!mobile || sheetOpen)) pendingFocus.current = selectedId
+    setSelectedId(null)
+  }
 
+  const onKeyRef = useRef<(e: KeyboardEvent) => void>(() => {})
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedId(null) }
+    onKeyRef.current = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented) return
+      if (onboardOpen) { dismissOnboarding(); return }
+      if (!selectedId) return
+      if (mobile) setSheetOpen(false)
+      else pendingFocus.current = selectedId
+      setSelectedId(null)
+    }
+  })
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => onKeyRef.current(e)
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  const lastSelected = useRef<string | null>(null)
   useEffect(() => {
-    if (selectedId) { lastSelected.current = selectedId; return }
-    const id = lastSelected.current
-    if (!id) return
+    const id = pendingFocus.current
+    if (selectedId || !id) return
+    pendingFocus.current = null
     document.querySelector<HTMLButtonElement>(`[data-entry="${id}"]`)?.focus()
+    setHoverId(null)
   }, [selectedId])
+
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const viewChanged = useRef(false)
+  useEffect(() => {
+    if (!viewChanged.current) { viewChanged.current = true; return }
+    if (view === 'sky') toggleRef.current?.focus()
+  }, [view])
 
   if (view === 'scroll') return <ScrollView entries={ENTRIES} onBack={() => setView('sky')} />
 
@@ -69,7 +91,7 @@ export default function App() {
       />
       <Frame onHelp={() => setOnboardOpen(true)} />
       <Masthead />
-      <button type="button" className="tool scroll-toggle" onClick={() => setView('scroll')}>Read as scroll</button>
+      <button ref={toggleRef} type="button" className="tool scroll-toggle" onClick={() => setView('scroll')}>Read as scroll</button>
       <SidePanel
         entries={ENTRIES}
         selected={selected}

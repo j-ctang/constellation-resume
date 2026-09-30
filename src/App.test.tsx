@@ -100,6 +100,35 @@ describe('App', () => {
       .getByRole('button', { name: /the mimic/i })).toHaveFocus()
   })
 
+  it('mouse Return leaves no stuck highlight', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(within(index()).getByRole('button', { name: /the mimic/i }))
+    await user.click(screen.getByRole('button', { name: /return to catalogue/i }))
+    expect(container.querySelectorAll('li.entry.hot')).toHaveLength(0)
+  })
+
+  it('Escape dismisses onboarding first and changes nothing else', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(within(index()).getByRole('button', { name: /the mimic/i }))
+    localStorage.removeItem('constellation-resume:onboarded')
+    await user.click(screen.getByRole('button', { name: /how to draw/i }))
+    expect(screen.getByText(/this sky is yours too/i)).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByText(/this sky is yours too/i)).toBeNull()
+    expect(screen.getByRole('button', { name: /return to catalogue/i })).toBeInTheDocument()
+  })
+
+  it('focuses scroll heading, then the toggle on return', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /read as scroll/i }))
+    expect(screen.getByRole('heading', { level: 1, name: /justin tang/i })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: /return to the sky/i }))
+    expect(screen.getByRole('button', { name: /read as scroll/i })).toHaveFocus()
+  })
+
   it('announces the opened constellation', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -130,6 +159,17 @@ describe('App on mobile', () => {
     fireEvent.click(container.querySelector('canvas.sky')!)
     expect(sheet).not.toHaveClass('open')
     expect(screen.queryByRole('button', { name: /return to catalogue/i })).toBeNull()
+  })
+
+  it('makes the closed sheet content inert', async () => {
+    mockMobile()
+    localStorage.setItem('constellation-resume:onboarded', '1')
+    const user = userEvent.setup()
+    render(<App />)
+    const nav = () => screen.getByRole('navigation', { name: /index of constellations/i, hidden: true })
+    expect(nav().closest('[inert]')).not.toBeNull()
+    await user.click(screen.getByRole('button', { name: /toggle catalogue/i }))
+    expect(nav().closest('[inert]')).toBeNull()
   })
 
   it('grip toggles the sheet to show the index', async () => {

@@ -1,16 +1,19 @@
+import { useEffect, useRef } from 'react'
 import { PROFILE, type SkyEntry } from '../sky.config'
 import { groupByRegion } from '../lib/regions'
 import { realTitle } from '../lib/format'
 
 export default function ScrollView({ entries, onBack }: { entries: SkyEntry[]; onBack: () => void }) {
+  const headRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => { headRef.current?.focus() }, [])
   return (
-    <div className="scroll">
+    <main className="scroll">
       <div className="scroll-bar">
         <button type="button" className="tool" onClick={onBack}>← Return to the sky</button>
         <a className="tool primary" href={PROFILE.pdfUrl}>Download PDF</a>
       </div>
       <header className="scroll-head">
-        <h1>{PROFILE.name}</h1>
+        <h1 ref={headRef} tabIndex={-1}>{PROFILE.name}</h1>
         <p className="scroll-role">{PROFILE.role}</p>
         <p>{PROFILE.bio}</p>
         <ul className="links">
@@ -34,13 +37,13 @@ export default function ScrollView({ entries, onBack }: { entries: SkyEntry[]; o
                 </dl>
               )}
               {e.bullets.length > 0 && (
-                <ul className="bullets">{e.bullets.map(b => <li key={b}>{b}</li>)}</ul>
+                <ul className="bullets">{e.bullets.map((b, i) => <li key={i}>{b}</li>)}</ul>
               )}
               <p className="scroll-poetic"><em>{e.poeticName}</em> — {e.lore}</p>
             </article>
           ))}
         </section>
       ))}
-    </div>
+    </main>
   )
 }

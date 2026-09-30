@@ -29,7 +29,7 @@ export default function EntryCard({ entry, onBack }: { entry: SkyEntry; onBack: 
         <p className="lore">{entry.lore}</p>
         {entry.bullets.length > 0 && (
           <ul className="bullets">
-            {entry.bullets.map(b => <li key={b}>{b}</li>)}
+            {entry.bullets.map((b, i) => <li key={i}>{b}</li>)}
           </ul>
         )}
       </div>

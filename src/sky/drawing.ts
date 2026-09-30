@@ -7,6 +7,7 @@ export const SNAP = 14
 export const initialDrawing: DrawingState = { figures: [], active: [] }
 
 function finish(s: DrawingState): DrawingState {
+  if (s.active.length === 0) return s
   return { figures: s.active.length >= 2 ? [...s.figures, s.active] : s.figures, active: [] }
 }
 

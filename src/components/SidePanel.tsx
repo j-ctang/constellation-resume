@@ -50,6 +50,7 @@ export default function SidePanel(props: SidePanelProps) {
   return (
     <aside className={`panel${mobile ? ' sheet' : ''}${mobile && sheetOpen ? ' open' : ''}`} aria-label="Resume panel">
       {grip}
+      <div className="panel-inner" inert={mobile && !sheetOpen}>
       {selected ? (
         <EntryCard entry={selected} onBack={onBack} />
       ) : (
@@ -64,6 +65,7 @@ export default function SidePanel(props: SidePanelProps) {
           </div>
         </>
       )}
+      </div>
     </aside>
   )
 }
