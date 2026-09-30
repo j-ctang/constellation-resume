@@ -76,8 +76,8 @@ export const ENTRIES: SkyEntry[] = [
   {
     id: 'uci',
     region: 'academy',
-    poeticName: "The Anteater's Lamp",
-    lore: 'Four winters of study, lit by a small and stubborn flame.',
+    poeticName: "Anteater's Ferry",
+    lore: 'Four years of crossing, one steady oar-stroke at a time.',
     title: 'B.S. Computer Science',
     org: 'University of California, Irvine',
     dates: 'Fall 2025 – Spring 2029 (expected)',
