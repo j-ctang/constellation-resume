@@ -27,4 +27,27 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /return to catalogue/i }))
     expect(index()).toBeInTheDocument()
   })
+
+  it('renders a focusable hotspot per constellation that opens the panel', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const sky = screen.getByRole('group', { name: 'Constellations' })
+    const spots = within(sky).getAllByRole('button')
+    expect(spots).toHaveLength(5)
+    await user.click(within(sky).getByRole('button', { name: /the mimic/i }))
+    expect(screen.getByRole('heading', { name: 'The Mimic' })).toBeInTheDocument()
+    expect(within(sky).getByRole('button', { name: /the mimic/i })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('supports keyboard: Tab to a hotspot, Enter opens, Escape returns', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const sky = screen.getByRole('group', { name: 'Constellations' })
+    const first = within(sky).getAllByRole('button')[0]
+    first.focus()
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('button', { name: /return to catalogue/i })).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('navigation', { name: /index of constellations/i })).toBeInTheDocument()
+  })
 })
