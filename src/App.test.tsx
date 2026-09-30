@@ -87,6 +87,25 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: /return to the sky/i }))
     expect(screen.getByRole('group', { name: 'Constellations' })).toBeInTheDocument()
   })
+
+  it('moves focus into the card and back to the index item', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const item = within(screen.getByRole('navigation', { name: /index of constellations/i }))
+      .getByRole('button', { name: /the mimic/i })
+    await user.click(item)
+    expect(screen.getByRole('heading', { name: 'The Mimic' })).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(within(screen.getByRole('navigation', { name: /index of constellations/i }))
+      .getByRole('button', { name: /the mimic/i })).toHaveFocus()
+  })
+
+  it('announces the opened constellation', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(within(screen.getByRole('navigation', { name: /index/i })).getByRole('button', { name: /the mimic/i }))
+    expect(screen.getByRole('status')).toHaveTextContent('The Mimic — ML & Robotics')
+  })
 })
 
 describe('App on mobile', () => {

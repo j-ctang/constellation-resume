@@ -25,6 +25,7 @@ export default function IndexList({ entries, hotId, onSelect, onHover }: Props) 
                   <button
                     type="button"
                     className="entry-main"
+                    data-entry={e.id}
                     onClick={() => onSelect(e.id)}
                     onMouseEnter={() => onHover(e.id)}
                     onMouseLeave={() => onHover(null)}
