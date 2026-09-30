@@ -9,6 +9,13 @@ const full: SkyEntry = {
 }
 
 describe('EntryCard', () => {
+  it('focuses its heading without scrolling the page', () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    render(<EntryCard entry={full} onBack={() => {}} />)
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    focus.mockRestore()
+  })
+
   it('shows the entry link at the bottom when present', () => {
     render(<EntryCard entry={{ ...full, link: { label: 'View repository', href: 'https://example.com/r' } }} onBack={() => {}} />)
     expect(screen.getByRole('link', { name: /view repository/i })).toHaveAttribute('href', 'https://example.com/r')

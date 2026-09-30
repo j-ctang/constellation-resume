@@ -5,7 +5,7 @@ import { Ornament } from './IntroCard'
 
 export default function EntryCard({ entry, onBack }: { entry: SkyEntry; onBack: () => void }) {
   const headingRef = useRef<HTMLHeadingElement>(null)
-  useEffect(() => { headingRef.current?.focus() }, [entry.id])
+  useEffect(() => { headingRef.current?.focus({ preventScroll: true }) }, [entry.id])
   const region = REGIONS.find(r => r.id === entry.region)
   return (
     <article className="card" aria-labelledby={`card-${entry.id}`}>
