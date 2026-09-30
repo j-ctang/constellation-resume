@@ -5,6 +5,7 @@ import Frame from './components/Frame'
 import Masthead from './components/Masthead'
 import SidePanel from './components/SidePanel'
 import SkyCanvas from './components/SkyCanvas'
+import ScrollView from './components/ScrollView'
 import Onboarding from './components/Onboarding'
 import { ONBOARD_KEY, readFlag, writeFlag } from './lib/storage'
 
@@ -16,6 +17,7 @@ export default function App() {
   const selected = ENTRIES.find(e => e.id === selectedId) ?? null
   const hotId = hoverId ?? selectedId
 
+  const [view, setView] = useState<'sky' | 'scroll'>('sky')
   const [onboardOpen, setOnboardOpen] = useState(() => !readFlag(ONBOARD_KEY))
   const dismissOnboarding = () => {
     if (!onboardOpen) return
@@ -31,6 +33,8 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  if (view === 'scroll') return <ScrollView entries={ENTRIES} onBack={() => setView('sky')} />
 
   return (
     <main className="app">
@@ -48,6 +52,7 @@ export default function App() {
       />
       <Frame onHelp={() => setOnboardOpen(true)} />
       <Masthead />
+      <button type="button" className="tool scroll-toggle" onClick={() => setView('scroll')}>Read as scroll</button>
       <SidePanel
         entries={ENTRIES}
         selected={selected}

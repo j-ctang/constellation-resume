@@ -76,4 +76,14 @@ describe('App', () => {
     await user.click(container.querySelector('canvas.sky')!)
     expect(screen.queryByText(/this sky is yours too/i)).toBeNull()
   })
+
+  it('toggles between sky and scroll views', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /read as scroll/i }))
+    expect(screen.getByRole('heading', { level: 2, name: /experience/i })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Constellations' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: /return to the sky/i }))
+    expect(screen.getByRole('group', { name: 'Constellations' })).toBeInTheDocument()
+  })
 })
