@@ -9,6 +9,16 @@ const full: SkyEntry = {
 }
 
 describe('EntryCard', () => {
+  it('shows the entry link at the bottom when present', () => {
+    render(<EntryCard entry={{ ...full, link: { label: 'View repository', href: 'https://example.com/r' } }} onBack={() => {}} />)
+    expect(screen.getByRole('link', { name: /view repository/i })).toHaveAttribute('href', 'https://example.com/r')
+  })
+
+  it('renders no link when absent', () => {
+    render(<EntryCard entry={full} onBack={() => {}} />)
+    expect(screen.queryByRole('link')).toBeNull()
+  })
+
   it('shows poetic name, real title, fields, lore, bullets', () => {
     render(<EntryCard entry={full} onBack={() => {}} />)
     expect(screen.getByRole('heading', { name: 'The Test' })).toBeInTheDocument()

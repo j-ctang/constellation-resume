@@ -12,11 +12,11 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: /justin tang/i })).toBeInTheDocument()
   })
 
-  it('lists constellations grouped by region, hiding empty regions', () => {
+  it('lists constellations grouped by region', () => {
     render(<App />)
     const nav = index()
     expect(within(nav).getByText('The Guild Reaches')).toBeInTheDocument()
-    expect(within(nav).queryByText('The Forge')).toBeNull()
+    expect(within(nav).getByText('The Forge')).toBeInTheDocument()
     expect(within(nav).getByRole('button', { name: /the patient hand/i })).toBeInTheDocument()
   })
 
@@ -34,7 +34,7 @@ describe('App', () => {
     render(<App />)
     const sky = screen.getByRole('group', { name: 'Constellations' })
     const spots = within(sky).getAllByRole('button')
-    expect(spots).toHaveLength(5)
+    expect(spots).toHaveLength(8)
     await user.click(within(sky).getByRole('button', { name: /the mimic/i }))
     expect(screen.getByRole('heading', { name: 'The Mimic' })).toBeInTheDocument()
     expect(within(sky).getByRole('button', { name: /the mimic/i })).toHaveAttribute('aria-pressed', 'true')

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import Credit from './Credit'
 import { PROFILE, type SkyEntry } from '../sky.config'
 import { groupByRegion } from '../lib/regions'
 import { realTitle } from '../lib/format'
@@ -39,11 +40,15 @@ export default function ScrollView({ entries, onBack }: { entries: SkyEntry[]; o
               {e.bullets.length > 0 && (
                 <ul className="bullets">{e.bullets.map((b, i) => <li key={i}>{b}</li>)}</ul>
               )}
+              {e.link && <p className="entry-link"><a href={e.link.href}>{e.link.label}</a></p>}
               <p className="scroll-poetic"><em>{e.poeticName}</em> — {e.lore}</p>
             </article>
           ))}
         </section>
       ))}
+      <footer className="credit">
+        <Credit />
+      </footer>
     </main>
   )
 }

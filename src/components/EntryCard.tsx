@@ -32,6 +32,11 @@ export default function EntryCard({ entry, onBack }: { entry: SkyEntry; onBack: 
             {entry.bullets.map((b, i) => <li key={i}>{b}</li>)}
           </ul>
         )}
+        {entry.link && (
+          <p className="entry-link">
+            <a href={entry.link.href} target="_blank" rel="noreferrer">{entry.link.label} ↗</a>
+          </p>
+        )}
       </div>
       <div className="panel-foot">
         <button type="button" className="tool" onClick={onBack}>← Return to catalogue</button>

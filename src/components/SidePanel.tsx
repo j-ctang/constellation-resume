@@ -1,4 +1,5 @@
 import { useRef } from 'react'
+import Credit from './Credit'
 import { sheetGesture } from '../lib/sheet'
 import { PROFILE, type SkyEntry } from '../sky.config'
 import EntryCard from './EntryCard'
@@ -62,6 +63,7 @@ export default function SidePanel(props: SidePanelProps) {
           <div className="panel-foot">
             <p>Hover a name to light its figure; select it to read the entry.</p>
             <p><a className="tool" href={PROFILE.pdfUrl}>Download PDF</a></p>
+            <p className="credit"><Credit /></p>
           </div>
         </>
       )}

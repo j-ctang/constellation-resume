@@ -7,6 +7,11 @@ export interface SkyField {
   value: string
 }
 
+export interface SkyLink {
+  label: string
+  href: string
+}
+
 export interface SkyEntry {
   /** kebab-case, unique. Seeds the star layout, so renaming an id reshapes its constellation. */
   id: string
@@ -18,6 +23,8 @@ export interface SkyEntry {
   dates?: string
   fields: SkyField[]
   bullets: string[]
+  /** Optional link shown under the bullets, e.g. a repository. */
+  link?: SkyLink
 }
 
 export interface RegionInfo {
@@ -30,7 +37,7 @@ export interface Profile {
   name: string
   role: string
   bio: string
-  links: { label: string; href: string }[]
+  links: SkyLink[]
   pdfUrl: string
 }
 
@@ -72,6 +79,58 @@ export const ENTRIES: SkyEntry[] = [
       'Shipped a Hugging Face Hub–streaming dataset viewer, removing full downloads just to preview data',
       'Built live 3D URDF visualization during teleoperation and cross-arm safety gating across three robot arms',
     ],
+    link: { label: 'View repository', href: 'https://github.com/makermods-robotics/makermodslab' },
+  },
+  {
+    id: 'jev-prune',
+    region: 'forge',
+    poeticName: "The Pruner's Shears",
+    lore: 'It trims the dead branches so the living ones reach further.',
+    title: 'Jev Prune for Claude Code',
+    fields: [
+      { label: 'Type', value: 'Local proxy + CLI' },
+      { label: 'Stack', value: 'TypeScript · Node.js' },
+    ],
+    bullets: [
+      'Built a local proxy between Claude Code and the Anthropic API that prunes stale tool results from context',
+      'Prunes automatically near 120K tokens, only between tasks, and passes requests through unchanged if the pruning service is down',
+      'Shipped a CLI with stats, doctor, and self-update commands, plus multi-terminal support with crash restart',
+    ],
+    link: { label: 'View repository', href: 'https://github.com/j-ctang/claude-code-jev-prune' },
+  },
+  {
+    id: 'tab-tamer',
+    region: 'forge',
+    poeticName: 'The Shepherd',
+    lore: 'Every stray tab counted and brought home before dusk.',
+    title: 'Tab Tamer',
+    fields: [
+      { label: 'Type', value: 'Browser extension' },
+      { label: 'Stack', value: 'JavaScript · Chrome & Safari Web Extensions' },
+    ],
+    bullets: [
+      'Sorts open tabs into Focus now, Read later, Off track, and Your call based on a stated goal',
+      'Added a confidence slider that controls how many tabs go to manual review',
+      'Built a preview-only cleanup review that flags finished, redundant, and stale tabs without closing anything',
+    ],
+    link: { label: 'View repository', href: 'https://github.com/j-ctang/tab-tamer' },
+  },
+  {
+    id: 'cancelwatch',
+    region: 'forge',
+    poeticName: 'The Watchful Bell',
+    lore: 'It rings three days early, so no one pays for a door already closed.',
+    title: 'CancelWatch',
+    fields: [
+      { label: 'Type', value: 'Web app' },
+      { label: 'Stack', value: 'Next.js · TypeScript · Supabase · Resend · Vercel' },
+    ],
+    bullets: [
+      "Emails parents before a kid-activity membership's cancellation notice window closes",
+      'Computes cancel-by deadlines from start date, renewal cycle, and notice period, rolling forward each cycle',
+      'Uses passwordless private-link accounts and a daily Vercel Cron job for 3-day and 1-day reminders',
+    ],
+    link: { label: 'View repository', href: 'https://github.com/j-ctang/cancelwatch' },
   },
   {
     id: 'uci',
