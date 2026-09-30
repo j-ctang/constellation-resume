@@ -134,6 +134,7 @@ body {
   position: absolute; pointer-events: auto; border: 0; padding: 0; border-radius: 50%;
   background: transparent; cursor: pointer;
 }
+.hotspot.compact { border-radius: 12px }
 .hotspot:focus-visible { outline: 1px dashed var(--gold-hi); outline-offset: 4px }
 
 /* onboarding toast + help */
@@ -198,7 +199,9 @@ body {
   .rule { margin: 8px 0 6px; width: 180px }
   .masthead .sub { font-size: 13px; max-width: 230px }
   .help { top: 14px; right: 14px }
-  .scroll-toggle { top: 50px; right: 14px; left: auto; bottom: auto; padding: 8px 10px; font-size: 10px; letter-spacing: .16em; min-height: 34px }
+  /* pinned on the catalogue bar, clear of the masthead */
+  .scroll-toggle { top: auto; bottom: calc(18px + env(safe-area-inset-bottom)); right: 14px; left: auto; z-index: 4; padding: 8px 10px; font-size: 10px; letter-spacing: .16em; min-height: 34px }
+  .app:has(.panel.sheet.open) .scroll-toggle { display: none }
 
   .panel.sheet {
     top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 55vh; max-height: calc(100% - 60px);
@@ -213,7 +216,9 @@ body {
     touch-action: none; padding: 10px 16px 0;
   }
   .grip-bar { width: 44px; height: 4px; border-radius: 2px; background: rgba(232, 200, 114, .5) }
-  .grip-label { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-hi) }
+  .grip { align-items: flex-start }
+  .grip-bar { align-self: center }
+  .grip-label { padding-top: 6px; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-hi) }
   .panel.sheet .panel-head { padding: 14px 18px 10px }
   .panel.sheet .panel-foot { padding: 10px 16px 14px }
 

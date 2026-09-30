@@ -110,8 +110,8 @@ export default function SkyCanvas(props: SkyCanvasProps) {
             <button
               key={f.id}
               type="button"
-              className="hotspot"
-              style={{ left: f.center.x - f.radius, top: f.center.y - f.radius, width: f.radius * 2, height: f.radius * 2 }}
+              className={f.compact ? 'hotspot compact' : 'hotspot'}
+              style={{ left: f.hit.x, top: f.hit.y, width: f.hit.w, height: f.hit.h }}
               aria-label={`${e.poeticName} — ${realTitle(e)}`}
               aria-pressed={selectedId === f.id}
               onClick={() => onSelect(f.id)}

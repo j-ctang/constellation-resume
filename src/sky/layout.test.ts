@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ENTRIES, type SkyEntry } from '../sky.config'
 import {
-  backgroundStars, emptySpot, layoutSky, regionRect, skyArea, spanningEdges, SHEET_PEEK, type Rect,
+  backgroundStars, emptySpot, layoutSky, regionRects, skyArea, spanningEdges, SHEET_PEEK, type Rect,
 } from './layout'
 
 const e = (id: string, region: SkyEntry['region']): SkyEntry => ({
@@ -78,9 +78,46 @@ describe('layoutSky', () => {
     const { figures } = layoutSky(ENTRIES, a, mobile)
     expect(figures).toHaveLength(ENTRIES.length)
     for (const f of figures) {
-      const r = regionRect(f.region, a, mobile)
+      const r = regionRects(ENTRIES, a, mobile)[f.region]!
       for (const s of f.stars) expect(inside(s, r)).toBe(true)
       expect(inside(f.labelAt, a)).toBe(true)
+    }
+  })
+})
+
+describe('layoutSky on mobile', () => {
+  const a = skyArea(390, 844, true)
+  const { figures } = layoutSky(ENTRIES, a, true)
+
+  it('puts at most 2 constellations side by side', () => {
+    for (const f of figures) expect(f.labelMaxWidth).toBeGreaterThanOrEqual(a.w * 0.4)
+  })
+
+  it('stacks regions without overlap, top to bottom', () => {
+    const rects = Object.values(regionRects(ENTRIES, a, true)).sort((p, q) => p!.y - q!.y)
+    for (let i = 1; i < rects.length; i++) expect(rects[i]!.y).toBeGreaterThanOrEqual(rects[i - 1]!.y + rects[i - 1]!.h - 0.5)
+  })
+
+  it('keeps every halo inside its own region', () => {
+    const rects = regionRects(ENTRIES, a, true)
+    for (const f of figures) {
+      const r = rects[f.region]!
+      expect(f.center.y - f.radius).toBeGreaterThanOrEqual(r.y - 0.5)
+      expect(f.center.y + f.radius).toBeLessThanOrEqual(r.y + r.h + 0.5)
+    }
+  })
+
+  it('gives each constellation a tap target at least 44px tall and wide', () => {
+    for (const f of figures) {
+      expect(f.hit.w).toBeGreaterThanOrEqual(44)
+      expect(f.hit.h).toBeGreaterThanOrEqual(44)
+    }
+  })
+
+  it('bounds labels to the sky with an edge margin', () => {
+    for (const f of figures) {
+      expect(f.labelMinX).toBeGreaterThanOrEqual(a.x)
+      expect(f.labelMaxX).toBeLessThanOrEqual(a.x + a.w)
     }
   })
 })

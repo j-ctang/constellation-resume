@@ -1,5 +1,6 @@
 import type { BgStar, Figure, Point, RegionLabel } from './layout'
 import type { DrawingState } from './drawing'
+import { fitLabel, placeLabel } from './label'
 import { mulberry32 } from './rng'
 
 const SERIF = '"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",P052,"URW Palladio L",Georgia,serif'
@@ -103,11 +104,16 @@ export function drawFigure(ctx: CanvasRenderingContext2D, fig: Figure, label: st
   const la = Math.max(0, Math.min(1, (rv - 0.45) / 0.55))
   if (la <= 0) return
   ctx.textAlign = 'center'
-  ctx.font = `13px ${SERIF}`
-  ctx.letterSpacing = '4px'
+  ctx.font = `${fig.compact ? 11 : 13}px ${SERIF}`
+  ctx.letterSpacing = fig.compact ? '2.5px' : '4px'
   ctx.shadowColor = 'rgba(4,6,20,0.95)'; ctx.shadowBlur = 8
   ctx.fillStyle = st.lit ? `rgba(255,238,190,${ea * la})` : `rgba(240,222,170,${0.92 * ea * la})`
-  ctx.fillText(label.toUpperCase(), fig.labelAt.x, fig.labelAt.y)
+  const measure = (t: string) => ctx.measureText(t).width
+  const lines = fitLabel(label.toUpperCase(), fig.labelMaxWidth, measure)
+  const half = Math.max(...lines.map(measure)) / 2
+  const x = placeLabel(fig.labelAt.x, half, fig.labelMinX, fig.labelMaxX)
+  const lineHeight = fig.compact ? 14 : 17
+  lines.forEach((line, i) => ctx.fillText(line, x, fig.labelAt.y + i * lineHeight))
   ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'
   ctx.letterSpacing = '0px'
 }

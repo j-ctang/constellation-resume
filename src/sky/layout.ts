@@ -13,6 +13,15 @@ export interface Figure {
   center: Point
   radius: number
   labelAt: Point
+  /** Widest the label may be before wrapping. */
+  labelMaxWidth: number
+  /** Horizontal bounds the label must stay inside. */
+  labelMinX: number
+  labelMaxX: number
+  /** Tap/click target: the whole grid cell on phones, the halo's bounding box otherwise. */
+  hit: Rect
+  /** Smaller label type on phones. */
+  compact: boolean
 }
 
 export interface RegionLabel { region: Region; name: string; section: string; at: Point }
@@ -22,6 +31,11 @@ export interface BgStar { x: number; y: number; r: number; a: number; phase: num
 export const SHEET_PEEK = 72
 const PANEL_GUTTER = 40
 const LABEL_BAND = 30
+const LABEL_MARGIN = 8
+const MOBILE_MAX_COLS = 2
+// Mobile regions stack between the masthead and the sheet peek.
+const MOBILE_TOP = 0.22
+const MOBILE_BOTTOM = 0.99
 
 // Fractions of the sky area. Desktop keeps the top-left clear for the masthead.
 const DESKTOP_BOXES: Record<Region, Rect> = {
@@ -30,12 +44,6 @@ const DESKTOP_BOXES: Record<Region, Rect> = {
   academy: { x: 0.04, y: 0.66, w: 0.44, h: 0.28 },
   toolmakers: { x: 0.52, y: 0.44, w: 0.44, h: 0.5 },
 }
-const MOBILE_BOXES: Record<Region, Rect> = {
-  guild: { x: 0.05, y: 0.22, w: 0.9, h: 0.17 },
-  forge: { x: 0.05, y: 0.4, w: 0.9, h: 0.15 },
-  academy: { x: 0.05, y: 0.56, w: 0.9, h: 0.14 },
-  toolmakers: { x: 0.05, y: 0.71, w: 0.9, h: 0.27 },
-}
 
 export function skyArea(w: number, h: number, mobile: boolean): Rect {
   if (mobile) return { x: 0, y: 0, w, h: Math.max(0, h - SHEET_PEEK) }
@@ -43,13 +51,37 @@ export function skyArea(w: number, h: number, mobile: boolean): Rect {
   return { x: 0, y: 0, w: Math.max(0, w - panel), h }
 }
 
-export function regionRect(region: Region, area: Rect, mobile: boolean): Rect {
-  const b = (mobile ? MOBILE_BOXES : DESKTOP_BOXES)[region]
-  return { x: area.x + b.x * area.w, y: area.y + b.y * area.h, w: b.w * area.w, h: b.h * area.h }
+/**
+ * Region rectangles for the regions that have entries.
+ * Desktop uses fixed boxes; mobile stacks non-empty regions, each as tall as its rows of constellations.
+ */
+export function regionRects(entries: SkyEntry[], area: Rect, mobile: boolean): Partial<Record<Region, Rect>> {
+  const groups = groupByRegion(entries)
+  const out: Partial<Record<Region, Rect>> = {}
+  if (!mobile) {
+    for (const { region } of groups) {
+      const b = DESKTOP_BOXES[region.id]
+      out[region.id] = { x: area.x + b.x * area.w, y: area.y + b.y * area.h, w: b.w * area.w, h: b.h * area.h }
+    }
+    return out
+  }
+  const x = area.x + area.w * 0.04
+  const w = area.w * 0.92
+  const top = area.y + area.h * MOBILE_TOP
+  const height = area.h * (MOBILE_BOTTOM - MOBILE_TOP)
+  const rows = groups.map(g => Math.ceil(g.entries.length / MOBILE_MAX_COLS))
+  const rowH = Math.max(1, (height - groups.length * LABEL_BAND) / Math.max(1, rows.reduce((a, b) => a + b, 0)))
+  let y = top
+  groups.forEach(({ region }, i) => {
+    const h = LABEL_BAND + rows[i] * rowH
+    out[region.id] = { x, y, w, h }
+    y += h
+  })
+  return out
 }
 
-function gridCells(r: Rect, n: number): Rect[] {
-  const cols = Math.max(1, Math.min(n, Math.ceil(Math.sqrt((n * r.w) / Math.max(1, r.h)))))
+function gridCells(r: Rect, n: number, maxCols: number): Rect[] {
+  const cols = Math.max(1, Math.min(n, maxCols, Math.ceil(Math.sqrt((n * r.w) / Math.max(1, r.h)))))
   const rows = Math.ceil(n / cols)
   return Array.from({ length: n }, (_, i) => ({
     x: r.x + (r.w * (i % cols)) / cols,
@@ -80,7 +112,7 @@ export function spanningEdges(pts: Point[]): [number, number][] {
   return edges
 }
 
-function figureFor(entry: SkyEntry, cell: Rect, area: Rect): Figure {
+function figureFor(entry: SkyEntry, cell: Rect, area: Rect, compact: boolean): Figure {
   const rand = mulberry32(hashString(entry.id))
   const n = 4 + Math.floor(rand() * 4)
   const inner = { x: cell.x + cell.w * 0.12, y: cell.y + cell.h * 0.06, w: cell.w * 0.76, h: cell.h * 0.64 }
@@ -96,24 +128,42 @@ function figureFor(entry: SkyEntry, cell: Rect, area: Rect): Figure {
     x: stars.reduce((s, p) => s + p.x, 0) / stars.length,
     y: stars.reduce((s, p) => s + p.y, 0) / stars.length,
   }
-  const radius = Math.max(24, Math.max(...stars.map(s => dist(s, center))) + 18)
+  // Cap the halo so it never spills into a neighbouring cell or region.
+  const spread = Math.max(...stars.map(s => dist(s, center))) + 18
+  const room = Math.min(center.x - cell.x, cell.x + cell.w - center.x, center.y - cell.y, cell.y + cell.h - center.y)
+  const radius = Math.max(Math.min(24, room), Math.min(spread, room))
   const bottom = Math.max(...stars.map(s => s.y))
   const labelAt = {
     x: Math.min(area.x + area.w - 4, Math.max(area.x + 4, center.x)),
     y: Math.min(area.y + area.h - 4, bottom + 22),
   }
-  return { id: entry.id, region: entry.region, stars, edges: spanningEdges(stars), center, radius, labelAt }
+  return {
+    id: entry.id,
+    region: entry.region,
+    stars,
+    edges: spanningEdges(stars),
+    center,
+    radius,
+    labelAt,
+    labelMaxWidth: Math.max(cell.w - LABEL_MARGIN, 1),
+    labelMinX: area.x + LABEL_MARGIN,
+    labelMaxX: area.x + area.w - LABEL_MARGIN,
+    hit: compact ? cell : { x: center.x - radius, y: center.y - radius, w: radius * 2, h: radius * 2 },
+    compact,
+  }
 }
 
 export function layoutSky(entries: SkyEntry[], area: Rect, mobile: boolean): { figures: Figure[]; labels: RegionLabel[] } {
   if (area.w <= 0 || area.h <= 0) return { figures: [], labels: [] }
   const figures: Figure[] = []
   const labels: RegionLabel[] = []
+  const rects = regionRects(entries, area, mobile)
   for (const { region, entries: list } of groupByRegion(entries)) {
-    const r = regionRect(region.id, area, mobile)
+    const r = rects[region.id]
+    if (!r) continue
     labels.push({ region: region.id, name: region.name, section: region.section, at: { x: r.x, y: r.y + 12 } })
     const body = { x: r.x, y: r.y + LABEL_BAND, w: r.w, h: Math.max(1, r.h - LABEL_BAND) }
-    gridCells(body, list.length).forEach((cell, i) => figures.push(figureFor(list[i], cell, area)))
+    gridCells(body, list.length, mobile ? MOBILE_MAX_COLS : Infinity).forEach((cell, i) => figures.push(figureFor(list[i], cell, area, mobile)))
   }
   return { figures, labels }
 }
