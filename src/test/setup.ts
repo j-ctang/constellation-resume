@@ -8,19 +8,21 @@ afterEach(() => {
 })
 
 // jsdom has no matchMedia; default every query to false. Tests override per case.
+export const defaultMatchMedia = (query: string) => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+})
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   configurable: true,
-  value: vi.fn((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+  value: vi.fn(defaultMatchMedia),
 })
 
 // jsdom has no canvas; components must tolerate a null 2D context.

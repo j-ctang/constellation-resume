@@ -1,6 +1,7 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, afterEach } from 'vitest'
+import { defaultMatchMedia } from './test/setup'
 import App from './App'
 
 const index = () => screen.getByRole('navigation', { name: /index of constellations/i })
@@ -85,5 +86,38 @@ describe('App', () => {
     expect(screen.queryByRole('group', { name: 'Constellations' })).toBeNull()
     await user.click(screen.getByRole('button', { name: /return to the sky/i }))
     expect(screen.getByRole('group', { name: 'Constellations' })).toBeInTheDocument()
+  })
+})
+
+describe('App on mobile', () => {
+  const mockMobile = () =>
+    vi.mocked(window.matchMedia).mockImplementation((query: string) => ({
+      matches: query.includes('max-width: 760px'),
+      media: query, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    }))
+  afterEach(() => { vi.mocked(window.matchMedia).mockImplementation(defaultMatchMedia) })
+
+  it('opens the sheet on select and closes it on a sky tap', async () => {
+    mockMobile()
+    localStorage.setItem('constellation-resume:onboarded', '1')
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    const sheet = container.querySelector('aside.sheet')!
+    expect(sheet).not.toHaveClass('open')
+    await user.click(within(screen.getByRole('group', { name: 'Constellations' })).getAllByRole('button')[0])
+    expect(sheet).toHaveClass('open')
+    fireEvent.click(container.querySelector('canvas.sky')!)
+    expect(sheet).not.toHaveClass('open')
+    expect(screen.queryByRole('button', { name: /return to catalogue/i })).toBeNull()
+  })
+
+  it('grip toggles the sheet to show the index', async () => {
+    mockMobile()
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(screen.getByRole('button', { name: /toggle catalogue/i }))
+    expect(container.querySelector('aside.sheet')).toHaveClass('open')
   })
 })

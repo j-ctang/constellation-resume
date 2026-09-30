@@ -177,3 +177,42 @@ body {
   .scroll h2, .scroll-head { border-color: #999 }
   .links a { color: #000 }
 }
+
+.grip { display: none }
+
+@media (max-width: 1240px) {
+  .scroll-toggle { bottom: auto; top: calc(var(--edge) + 14px); left: auto; right: calc(var(--panel-w) + var(--edge) + 20px) }
+}
+
+@media (max-width: 760px) {
+  :root { --edge: 10px }
+  .frame { inset: 6px }
+  .frame::after { display: none }
+  .masthead { left: 22px; top: 20px; max-width: calc(100vw - 150px) }
+  .kicker { font-size: 9px; letter-spacing: .3em; margin-bottom: 6px }
+  .kicker .yr { display: none }
+  .masthead h1 { font-size: 26px; letter-spacing: .22em; margin-right: -.22em }
+  .rule { margin: 8px 0 6px; width: 180px }
+  .masthead .sub { font-size: 13px; max-width: 230px }
+  .help { top: 14px; right: 14px }
+  .scroll-toggle { top: 50px; right: 14px; left: auto; bottom: auto; padding: 8px 10px; font-size: 10px; letter-spacing: .16em; min-height: 34px }
+
+  .panel.sheet {
+    top: auto; left: 0; right: 0; bottom: 0; width: auto; height: 55vh; max-height: calc(100% - 60px);
+    border-left: 0; border-right: 0; border-bottom: 0;
+    transform: translateY(calc(100% - 72px));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .panel.sheet.open { transform: none }
+  .grip {
+    display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; height: 72px; flex: none;
+    background: none; border: 0; border-bottom: 1px solid var(--gold-faint); color: var(--vellum); font: inherit; cursor: pointer;
+    touch-action: none; padding: 10px 16px 0;
+  }
+  .grip-bar { width: 44px; height: 4px; border-radius: 2px; background: rgba(232, 200, 114, .5) }
+  .grip-label { font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-hi) }
+  .panel.sheet .panel-head { padding: 14px 18px 10px }
+  .panel.sheet .panel-foot { padding: 10px 16px 14px }
+
+  .onboard, .clear-mine { left: 50%; bottom: calc(72px + 18px) }
+}

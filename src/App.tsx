@@ -25,7 +25,12 @@ export default function App() {
     writeFlag(ONBOARD_KEY)
   }
 
-  const select = (id: string) => { setSelectedId(id); setHoverId(null); dismissOnboarding() }
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const select = (id: string) => { setSelectedId(id); setHoverId(null); setSheetOpen(true); dismissOnboarding() }
+  const onEmptyClick = () => {
+    dismissOnboarding()
+    if (mobile && sheetOpen) { setSelectedId(null); setSheetOpen(false) }
+  }
   const back = () => setSelectedId(null)
 
   useEffect(() => {
@@ -44,11 +49,11 @@ export default function App() {
         reducedMotion={reducedMotion}
         hotId={hotId}
         selectedId={selectedId}
-        drawingEnabled
+        drawingEnabled={!(mobile && sheetOpen)}
         showPulse={onboardOpen}
         onSelect={select}
         onHover={setHoverId}
-        onEmptyClick={dismissOnboarding}
+        onEmptyClick={onEmptyClick}
       />
       <Frame onHelp={() => setOnboardOpen(true)} />
       <Masthead />
@@ -58,11 +63,11 @@ export default function App() {
         selected={selected}
         hotId={hotId}
         mobile={mobile}
-        sheetOpen={false}
+        sheetOpen={sheetOpen}
         onSelect={select}
         onHover={setHoverId}
         onBack={back}
-        onSheetChange={() => {}}
+        onSheetChange={setSheetOpen}
       />
       <Onboarding open={onboardOpen} onDismiss={dismissOnboarding} />
     </main>
