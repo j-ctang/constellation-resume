@@ -31,6 +31,7 @@ export default function App() {
   const onEmptyClick = () => {
     dismissOnboarding()
     if (mobile && sheetOpen) { setSelectedId(null); setSheetOpen(false) }
+    else if (!mobile) setSelectedId(null)
   }
   const pendingFocus = useRef<string | null>(null)
   const back = () => {
