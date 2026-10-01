@@ -34,9 +34,14 @@ const LABEL_BAND = 30
 const LABEL_MARGIN = 8
 const MOBILE_MAX_COLS = 2
 const LONE_NUDGE = 0.12
-// Mobile regions stack between the masthead and the sheet peek.
+// Mobile regions stack below the masthead. Fallback top when the masthead is not measured.
 const MOBILE_TOP = 0.22
 const MOBILE_BOTTOM = 0.99
+const MOBILE_GAP = 12
+/** Shortest a mobile row may get; past this the sky grows taller and scrolls. */
+export const MOBILE_ROW_MIN = 120
+/** Widest a phone constellation may be, relative to its height, so it never looks squashed. */
+export const MOBILE_MAX_ASPECT = 1.6
 
 // Fractions of the sky area. Desktop keeps the top-left clear for the masthead.
 const DESKTOP_BOXES: Record<Region, Rect> = {
@@ -54,9 +59,10 @@ export function skyArea(w: number, h: number, mobile: boolean): Rect {
 
 /**
  * Region rectangles for the regions that have entries.
- * Desktop uses fixed boxes; mobile stacks non-empty regions, each as tall as its rows of constellations.
+ * Desktop uses fixed boxes; mobile stacks non-empty regions below `mobileTop` (the masthead's bottom edge),
+ * each as tall as its rows of constellations. Rows never drop below MOBILE_ROW_MIN, so the stack may run past the area.
  */
-export function regionRects(entries: SkyEntry[], area: Rect, mobile: boolean): Partial<Record<Region, Rect>> {
+export function regionRects(entries: SkyEntry[], area: Rect, mobile: boolean, mobileTop?: number): Partial<Record<Region, Rect>> {
   const groups = groupByRegion(entries)
   const out: Partial<Record<Region, Rect>> = {}
   if (!mobile) {
@@ -68,10 +74,10 @@ export function regionRects(entries: SkyEntry[], area: Rect, mobile: boolean): P
   }
   const x = area.x + area.w * 0.04
   const w = area.w * 0.92
-  const top = area.y + area.h * MOBILE_TOP
-  const height = area.h * (MOBILE_BOTTOM - MOBILE_TOP)
+  const top = mobileTop === undefined ? area.y + area.h * MOBILE_TOP : mobileTop + MOBILE_GAP
+  const height = area.y + area.h * MOBILE_BOTTOM - top
   const rows = groups.map(g => Math.ceil(g.entries.length / MOBILE_MAX_COLS))
-  const rowH = Math.max(1, (height - groups.length * LABEL_BAND) / Math.max(1, rows.reduce((a, b) => a + b, 0)))
+  const rowH = Math.max(MOBILE_ROW_MIN, (height - groups.length * LABEL_BAND) / Math.max(1, rows.reduce((a, b) => a + b, 0)))
   let y = top
   groups.forEach(({ region }, i) => {
     const h = LABEL_BAND + rows[i] * rowH
@@ -119,7 +125,12 @@ export function spanningEdges(pts: Point[]): [number, number][] {
 function figureFor(entry: SkyEntry, cell: Rect, area: Rect, compact: boolean): Figure {
   const rand = mulberry32(hashString(entry.id))
   const n = 4 + Math.floor(rand() * 4)
-  const inner = { x: cell.x + cell.w * 0.12, y: cell.y + cell.h * 0.06, w: cell.w * 0.76, h: cell.h * 0.64 }
+  let inner = { x: cell.x + cell.w * 0.12, y: cell.y + cell.h * 0.06, w: cell.w * 0.76, h: cell.h * 0.64 }
+  // Phone cells can be wide and short; narrow the star box so the figure keeps its shape.
+  if (compact && inner.w > MOBILE_MAX_ASPECT * inner.h) {
+    const w = MOBILE_MAX_ASPECT * inner.h
+    inner = { ...inner, x: inner.x + (inner.w - w) / 2, w }
+  }
   const minD = 0.22 * Math.min(inner.w, inner.h)
   const stars: Point[] = []
   // After 150 tries, accept any point so tiny cells still get n stars.
@@ -157,19 +168,25 @@ function figureFor(entry: SkyEntry, cell: Rect, area: Rect, compact: boolean): F
   }
 }
 
-export function layoutSky(entries: SkyEntry[], area: Rect, mobile: boolean): { figures: Figure[]; labels: RegionLabel[] } {
-  if (area.w <= 0 || area.h <= 0) return { figures: [], labels: [] }
+/**
+ * Figures and region labels for the sky. `bottom` is where the content ends; on phones it can run past the area,
+ * and the canvas grows to fit. `mobileTop` is the masthead's bottom edge on phones.
+ */
+export function layoutSky(entries: SkyEntry[], area: Rect, mobile: boolean, mobileTop?: number): { figures: Figure[]; labels: RegionLabel[]; bottom: number } {
+  if (area.w <= 0 || area.h <= 0) return { figures: [], labels: [], bottom: 0 }
   const figures: Figure[] = []
   const labels: RegionLabel[] = []
-  const rects = regionRects(entries, area, mobile)
+  const rects = regionRects(entries, area, mobile, mobileTop)
+  const bottom = Math.max(area.y + area.h, ...Object.values(rects).map(r => r!.y + r!.h))
+  const sky = { ...area, h: bottom - area.y }
   for (const { region, entries: list } of groupByRegion(entries)) {
     const r = rects[region.id]
     if (!r) continue
     labels.push({ region: region.id, name: region.name, section: region.section, at: { x: r.x, y: r.y + 12 } })
     const body = { x: r.x, y: r.y + LABEL_BAND, w: r.w, h: Math.max(1, r.h - LABEL_BAND) }
-    gridCells(body, list.length, mobile ? MOBILE_MAX_COLS : Infinity, mobile).forEach((cell, i) => figures.push(figureFor(list[i], cell, area, mobile)))
+    gridCells(body, list.length, mobile ? MOBILE_MAX_COLS : Infinity, mobile).forEach((cell, i) => figures.push(figureFor(list[i], cell, sky, mobile)))
   }
-  return { figures, labels }
+  return { figures, labels, bottom }
 }
 
 const STAR_COLORS = ['#dfe6ff', '#fff4e0', '#ffd9b8']

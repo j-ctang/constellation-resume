@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ENTRIES, type SkyEntry } from '../sky.config'
 import {
-  backgroundStars, emptySpot, layoutSky, regionRects, skyArea, spanningEdges, SHEET_PEEK, type Rect,
+  backgroundStars, emptySpot, layoutSky, regionRects, skyArea, spanningEdges, MOBILE_MAX_ASPECT, MOBILE_ROW_MIN, SHEET_PEEK, type Rect,
 } from './layout'
 
 const e = (id: string, region: SkyEntry['region']): SkyEntry => ({
@@ -63,7 +63,7 @@ describe('layoutSky', () => {
   })
 
   it('returns nothing for a zero-size area', () => {
-    expect(layoutSky(FIX, { x: 0, y: 0, w: 0, h: 0 }, false)).toEqual({ figures: [], labels: [] })
+    expect(layoutSky(FIX, { x: 0, y: 0, w: 0, h: 0 }, false)).toEqual({ figures: [], labels: [], bottom: 0 })
   })
 
   // Review Focus #2: odd viewports
@@ -75,12 +75,13 @@ describe('layoutSky', () => {
     [2560, 1440, false],
   ])('keeps stars in their region and labels in the sky at %ix%i', (w, h, mobile) => {
     const a = skyArea(w, h, mobile)
-    const { figures } = layoutSky(ENTRIES, a, mobile)
+    const { figures, bottom } = layoutSky(ENTRIES, a, mobile)
     expect(figures).toHaveLength(ENTRIES.length)
+    const sky = { ...a, h: Math.max(a.h, bottom - a.y) }
     for (const f of figures) {
       const r = regionRects(ENTRIES, a, mobile)[f.region]!
       for (const s of f.stars) expect(inside(s, r)).toBe(true)
-      expect(inside(f.labelAt, a)).toBe(true)
+      expect(inside(f.labelAt, sky)).toBe(true)
     }
   })
 })
@@ -122,6 +123,28 @@ describe('layoutSky on mobile', () => {
     expect(bell.hit.x + bell.hit.w / 2).toBeGreaterThan(a.x + a.w / 2)
     expect(bell.hit.x).toBeLessThan(shepherd.hit.x - a.w * 0.05)
     expect(bell.hit.y).toBeGreaterThan(forge[0].hit.y)
+  })
+
+  it('starts below the masthead when told where it ends', () => {
+    const top = 330
+    const rects = Object.values(regionRects(ENTRIES, a, true, top))
+    for (const r of rects) expect(r!.y).toBeGreaterThanOrEqual(top)
+  })
+
+  it.each([[375, 667], [360, 740], [390, 844]])('never squashes rows on a %ix%i phone, extending the sky instead', (w, h) => {
+    const s = skyArea(w, h, true)
+    const { figures, bottom } = layoutSky(ENTRIES, s, true, 330)
+    for (const f of figures) expect(f.hit.h).toBeGreaterThanOrEqual(MOBILE_ROW_MIN - 0.5)
+    expect(bottom).toBeGreaterThan(s.y + s.h)
+  })
+
+  it('keeps every constellation close to square on phones', () => {
+    const { figures: figs } = layoutSky(ENTRIES, skyArea(375, 667, true), true, 330)
+    for (const f of figs) {
+      const xs = f.stars.map(p => p.x)
+      // Star spread may be no wider than MOBILE_MAX_ASPECT times the star box height (64% of the row).
+      expect(Math.max(...xs) - Math.min(...xs)).toBeLessThanOrEqual(MOBILE_MAX_ASPECT * 0.64 * f.hit.h + 0.5)
+    }
   })
 
   it('bounds labels to the sky with an edge margin', () => {

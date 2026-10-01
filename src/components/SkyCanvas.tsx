@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import type { SkyEntry } from '../sky.config'
 import { realTitle } from '../lib/format'
-import { backgroundStars, emptySpot, layoutSky, skyArea } from '../sky/layout'
+import { backgroundStars, emptySpot, layoutSky, SHEET_PEEK, skyArea } from '../sky/layout'
 import { drawingReducer, initialDrawing } from '../sky/drawing'
 import { approach, figureHighlight } from '../sky/highlight'
 import { buildBackground, drawBgStars, drawFigure, drawPulse, drawRegionLabel, drawUser } from '../sky/render'
@@ -9,6 +9,8 @@ import { buildBackground, drawBgStars, drawFigure, drawPulse, drawRegionLabel, d
 export interface SkyCanvasProps {
   entries: SkyEntry[]
   mobile: boolean
+  /** Masthead's bottom edge on phones; the sky stacks below it. */
+  mobileTop?: number
   reducedMotion: boolean
   hotId: string | null
   selectedId: string | null
@@ -25,7 +27,7 @@ const HIGHLIGHT_MS = 450
 const REVEAL_MS = 1600
 
 export default function SkyCanvas(props: SkyCanvasProps) {
-  const { entries, mobile, selectedId, onSelect, onHover, onEmptyClick } = props
+  const { entries, mobile, mobileTop, selectedId, onSelect, onHover, onEmptyClick } = props
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [size, setSize] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }))
 
@@ -36,8 +38,10 @@ export default function SkyCanvas(props: SkyCanvasProps) {
   }, [])
 
   const area = useMemo(() => skyArea(size.w, size.h, mobile), [size, mobile])
-  const { figures, labels } = useMemo(() => layoutSky(entries, area, mobile), [entries, area, mobile])
-  const bgStars = useMemo(() => backgroundStars(size.w, size.h), [size])
+  const { figures, labels, bottom } = useMemo(() => layoutSky(entries, area, mobile, mobileTop), [entries, area, mobile, mobileTop])
+  // On phones the sky can run past the screen; the canvas grows to fit and its wrapper scrolls.
+  const canvasH = mobile ? Math.max(size.h, Math.ceil(bottom + SHEET_PEEK)) : size.h
+  const bgStars = useMemo(() => backgroundStars(size.w, canvasH), [size.w, canvasH])
   const pulseAt = useMemo(() => emptySpot(figures, area), [figures, area])
   const byId = useMemo(() => new Map(entries.map(e => [e.id, e])), [entries])
 
@@ -62,8 +66,8 @@ export default function SkyCanvas(props: SkyCanvasProps) {
     if (!canvas || !ctx) return
     const dpr = Math.min(2, window.devicePixelRatio || 1)
     canvas.width = Math.round(size.w * dpr)
-    canvas.height = Math.round(size.h * dpr)
-    const bg = buildBackground(size.w, size.h, dpr)
+    canvas.height = Math.round(canvasH * dpr)
+    const bg = buildBackground(size.w, canvasH, dpr)
     const start = performance.now()
     let last = start
     const emphasis = new Map<string, { lit: number; dim: number }>()
@@ -98,13 +102,14 @@ export default function SkyCanvas(props: SkyCanvasProps) {
     }
     raf = requestAnimationFrame(frame)
     return () => cancelAnimationFrame(raf)
-  }, [size])
+  }, [size.w, canvasH])
 
   return (
     <>
       <canvas
         ref={canvasRef}
         className="sky"
+        style={{ height: canvasH }}
         aria-hidden="true"
         onClick={e => {
           if (props.drawingEnabled) {
@@ -114,7 +119,7 @@ export default function SkyCanvas(props: SkyCanvasProps) {
           onEmptyClick()
         }}
       />
-      <div className="hotspots" role="group" aria-label="Constellations">
+      <div className="hotspots" style={{ height: canvasH }} role="group" aria-label="Constellations">
         {figures.map(f => {
           const e = byId.get(f.id)
           if (!e) return null
