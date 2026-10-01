@@ -1,8 +1,9 @@
+import type { Ref } from 'react'
 import { PROFILE } from '../sky.config'
 
-export default function Masthead() {
+export default function Masthead({ ref }: { ref?: Ref<HTMLElement> }) {
   return (
-    <header className="masthead">
+    <header ref={ref} className="masthead">
       <p className="kicker">Tabula Caeli<span className="yr"> · Anno MMXXVI</span></p>
       <h1>{PROFILE.name}</h1>
       <svg className="rule" viewBox="0 0 360 14" aria-hidden="true" preserveAspectRatio="none">

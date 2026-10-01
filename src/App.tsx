@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ENTRIES } from './sky.config'
 import { useMediaQuery } from './lib/useMediaQuery'
 import Frame from './components/Frame'
@@ -18,7 +18,21 @@ export default function App() {
   const selected = ENTRIES.find(e => e.id === selectedId) ?? null
   const hotId = hoverId ?? selectedId // index row emphasis
 
+  // Phones stack the sky below the masthead, so track where the masthead actually ends.
+  const mastRef = useRef<HTMLElement>(null)
+  const [mastBottom, setMastBottom] = useState<number | undefined>(undefined)
   const [view, setView] = useState<'sky' | 'scroll'>('sky')
+  useLayoutEffect(() => {
+    const el = mastRef.current
+    if (!el) return
+    const measure = () => setMastBottom(el.offsetTop + el.offsetHeight)
+    measure()
+    window.addEventListener('resize', measure)
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    ro?.observe(el)
+    return () => { window.removeEventListener('resize', measure); ro?.disconnect() }
+  }, [view])
+
   const [onboardOpen, setOnboardOpen] = useState(() => !readFlag(ONBOARD_KEY))
   const dismissOnboarding = () => {
     if (!onboardOpen) return
@@ -78,9 +92,11 @@ export default function App() {
       <p className="sr-only" role="status" aria-live="polite">
         {selected ? `${selected.poeticName} — ${realTitle(selected)}` : ''}
       </p>
+      <div className="sky-scroll">
       <SkyCanvas
         entries={ENTRIES}
         mobile={mobile}
+        mobileTop={mobile ? mastBottom : undefined}
         reducedMotion={reducedMotion}
         hotId={hoverId}
         selectedId={selectedId}
@@ -90,8 +106,9 @@ export default function App() {
         onHover={setHoverId}
         onEmptyClick={onEmptyClick}
       />
+      <Masthead ref={mastRef} />
+      </div>
       <Frame onHelp={() => setOnboardOpen(true)} />
-      <Masthead />
       <button ref={toggleRef} type="button" className="tool scroll-toggle" onClick={() => setView('scroll')}>Read as scroll</button>
       <SidePanel
         entries={ENTRIES}
