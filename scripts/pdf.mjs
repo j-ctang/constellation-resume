@@ -6,22 +6,35 @@ import { chromium } from 'playwright'
 
 const PORT = 4179
 const out = fileURLToPath(new URL('../public/resume.pdf', import.meta.url))
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: ['ignore', 'pipe', 'inherit'] })
-await new Promise((resolve, reject) => {
-  server.stdout.on('data', d => { if (String(d).includes('Local')) resolve() })
-  server.on('exit', code => reject(new Error(`vite preview exited with ${code}`)))
-})
+const URL_ROOT = `http://localhost:${PORT}/constellation-resume/`
+const READY_TIMEOUT_MS = 15000
 
-const browser = await chromium.launch()
+/** Poll until vite preview answers, failing after READY_TIMEOUT_MS or if the server exits. */
+async function waitForServer(server) {
+  let exited = null
+  server.once('exit', code => { exited = code })
+  const deadline = Date.now() + READY_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    if (exited !== null) throw new Error(`vite preview exited with ${exited}`)
+    try { if ((await fetch(URL_ROOT)).ok) return } catch { /* not up yet */ }
+    await new Promise(r => setTimeout(r, 200))
+  }
+  throw new Error(`vite preview not ready after ${READY_TIMEOUT_MS}ms`)
+}
+
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: ['ignore', 'ignore', 'inherit'] })
+let browser
 try {
+  await waitForServer(server)
+  browser = await chromium.launch()
   const page = await browser.newPage()
-  await page.goto(`http://localhost:${PORT}/constellation-resume/`)
+  await page.goto(URL_ROOT)
   await page.getByRole('button', { name: 'Read as scroll' }).click()
   await page.locator('.scroll').waitFor()
   await page.emulateMedia({ media: 'print' })
   await page.pdf({ path: out, format: 'Letter', preferCSSPageSize: true, printBackground: true })
   console.log(`Wrote ${out}`)
 } finally {
-  await browser.close()
+  await browser?.close()
   server.kill()
 }
