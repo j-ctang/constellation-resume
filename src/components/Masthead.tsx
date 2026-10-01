@@ -13,6 +13,13 @@ export default function Masthead() {
         <circle cx="200" cy="7" r="1.6" fill="currentColor" />
       </svg>
       <p className="sub"><em>A resume in the stars.</em> Select a <b>constellation</b> to read its entry.</p>
+      <ul className="contact" aria-label="Contact">
+        {PROFILE.links.map(l => (
+          <li key={l.href}>
+            <a href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{l.label}</a>
+          </li>
+        ))}
+      </ul>
     </header>
   )
 }

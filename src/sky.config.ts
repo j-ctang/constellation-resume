@@ -20,6 +20,8 @@ export interface SkyEntry {
   lore: string
   title: string
   org?: string
+  /** Optional website for the organisation; links the org name in the story. */
+  orgUrl?: string
   dates?: string
   fields: SkyField[]
   bullets: string[]
@@ -67,6 +69,7 @@ export const ENTRIES: SkyEntry[] = [
     lore: 'A hand that learned by watching, and was corrected mid-reach.',
     title: 'Software Engineer Intern',
     org: 'MakerMods',
+    orgUrl: 'https://www.makermods.ai',
     dates: 'Jul 2026 – Sep 2026',
     fields: [
       { label: 'Type', value: 'Internship' },

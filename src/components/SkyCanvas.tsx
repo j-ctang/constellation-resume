@@ -3,6 +3,7 @@ import type { SkyEntry } from '../sky.config'
 import { realTitle } from '../lib/format'
 import { backgroundStars, emptySpot, layoutSky, skyArea } from '../sky/layout'
 import { drawingReducer, initialDrawing } from '../sky/drawing'
+import { figureHighlight } from '../sky/highlight'
 import { buildBackground, drawBgStars, drawFigure, drawPulse, drawRegionLabel, drawUser } from '../sky/render'
 
 export interface SkyCanvasProps {
@@ -76,8 +77,7 @@ export default function SkyCanvas(props: SkyCanvasProps) {
         const reveal = p.reducedMotion ? 1 : Math.min(1, Math.max(0, (t - 300 - i * STAGGER_MS) / REVEAL_MS))
         drawFigure(ctx, f, map.get(f.id)?.poeticName ?? '', {
           reveal,
-          lit: p.hotId === f.id,
-          dim: p.hotId !== null && p.hotId !== f.id,
+          ...figureHighlight(f.id, p.hotId, p.selectedId),
         })
       })
       drawUser(ctx, user, now, p.reducedMotion)

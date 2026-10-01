@@ -16,7 +16,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [hoverId, setHoverId] = useState<string | null>(null)
   const selected = ENTRIES.find(e => e.id === selectedId) ?? null
-  const hotId = hoverId ?? selectedId
+  const hotId = hoverId ?? selectedId // index row emphasis
 
   const [view, setView] = useState<'sky' | 'scroll'>('sky')
   const [onboardOpen, setOnboardOpen] = useState(() => !readFlag(ONBOARD_KEY))
@@ -81,7 +81,7 @@ export default function App() {
         entries={ENTRIES}
         mobile={mobile}
         reducedMotion={reducedMotion}
-        hotId={hotId}
+        hotId={hoverId}
         selectedId={selectedId}
         drawingEnabled={!(mobile && sheetOpen)}
         showPulse={onboardOpen}

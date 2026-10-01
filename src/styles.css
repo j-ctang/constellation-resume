@@ -219,7 +219,7 @@ body {
   .grip { align-items: flex-start }
   .grip-bar { align-self: center }
   .grip-label { padding-top: 6px; font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: var(--gold-hi) }
-  .panel.sheet .panel-head { padding: 14px 18px 10px }
+  .panel.sheet .panel-head { padding: 14px 18px 10px; touch-action: none; cursor: grab }
   .panel.sheet .panel-foot { padding: 10px 16px 14px }
 
   .onboard, .clear-mine { left: 50%; bottom: calc(72px + 18px) }
@@ -234,3 +234,44 @@ body {
 .credit a { color: var(--gold-hi); text-decoration: none; border-bottom: 1px solid var(--gold-faint) }
 .scroll .credit { margin-top: 40px; text-align: center; border-top: 1px solid var(--gold-faint); padding-top: 16px }
 @media print { .credit, .credit a { color: #000 } }
+
+/* contact links: always visible in the masthead */
+.contact { display: flex; gap: 16px; margin: 12px 0 0; padding: 0; list-style: none; pointer-events: auto }
+.contact a { color: var(--gold-hi); font-size: 11px; letter-spacing: .24em; text-transform: uppercase; text-decoration: none; border-bottom: 1px solid var(--gold-faint); padding-bottom: 2px }
+.contact a:hover { border-color: var(--gold) }
+.contact a:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3px }
+.card-real a { color: var(--gold-hi); text-decoration: none; border-bottom: 1px solid var(--gold-faint) }
+.card-real a:hover { border-color: var(--gold) }
+
+/* back to catalogue: top-left of every story */
+.panel-head { position: relative }
+.card-back {
+  position: absolute; left: 14px; top: 12px; z-index: 1;
+  appearance: none; background: none; border: 1px solid rgba(232, 200, 114, .3); border-radius: 1px;
+  color: var(--gold-hi); font: inherit; font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  padding: 5px 8px; cursor: pointer;
+}
+.card-back:hover { border-color: var(--gold) }
+.card-back:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px }
+.card .panel-head { padding-top: 40px }
+@media (max-width: 760px) {
+  .contact { gap: 14px; margin-top: 8px }
+  .contact a { font-size: 10px; letter-spacing: .2em }
+  .panel.sheet .card .panel-head { padding-top: 36px }
+}
+
+/* catalogue scroll cue: fade + label while more constellations sit below the fold */
+.index-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column }
+.index-wrap .panel-body { flex: 1; min-height: 0 }
+.panel-body.has-more {
+  -webkit-mask-image: linear-gradient(180deg, #000 calc(100% - 56px), transparent);
+          mask-image: linear-gradient(180deg, #000 calc(100% - 56px), transparent);
+}
+.more-below {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); margin: 0; pointer-events: none;
+  font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold-hi);
+  padding: 4px 10px; border: 1px solid rgba(232, 200, 114, .35); background: rgba(9, 12, 34, .85);
+  animation: more-bob 1.8s ease-in-out infinite;
+}
+@keyframes more-bob { 50% { transform: translate(-50%, 3px) } }
+@media (prefers-reduced-motion: reduce) { .more-below { animation: none } }

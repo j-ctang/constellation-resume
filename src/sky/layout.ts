@@ -33,6 +33,7 @@ const PANEL_GUTTER = 40
 const LABEL_BAND = 30
 const LABEL_MARGIN = 8
 const MOBILE_MAX_COLS = 2
+const LONE_NUDGE = 0.12
 // Mobile regions stack between the masthead and the sheet peek.
 const MOBILE_TOP = 0.22
 const MOBILE_BOTTOM = 0.99
@@ -80,11 +81,14 @@ export function regionRects(entries: SkyEntry[], area: Rect, mobile: boolean): P
   return out
 }
 
-function gridCells(r: Rect, n: number, maxCols: number): Rect[] {
+function gridCells(r: Rect, n: number, maxCols: number, loneRight: boolean): Rect[] {
   const cols = Math.max(1, Math.min(n, maxCols, Math.ceil(Math.sqrt((n * r.w) / Math.max(1, r.h)))))
   const rows = Math.ceil(n / cols)
+  // On phones, a lone constellation in a two-column last row sits right of centre,
+  // nudged left so it is not stacked directly under its right-hand neighbour.
+  const lone = (i: number) => loneRight && cols === 2 && n % 2 === 1 && i === n - 1
   return Array.from({ length: n }, (_, i) => ({
-    x: r.x + (r.w * (i % cols)) / cols,
+    x: lone(i) ? r.x + r.w * (0.5 - LONE_NUDGE) : r.x + (r.w * (i % cols)) / cols,
     y: r.y + (r.h * Math.floor(i / cols)) / rows,
     w: r.w / cols,
     h: r.h / rows,
@@ -163,7 +167,7 @@ export function layoutSky(entries: SkyEntry[], area: Rect, mobile: boolean): { f
     if (!r) continue
     labels.push({ region: region.id, name: region.name, section: region.section, at: { x: r.x, y: r.y + 12 } })
     const body = { x: r.x, y: r.y + LABEL_BAND, w: r.w, h: Math.max(1, r.h - LABEL_BAND) }
-    gridCells(body, list.length, mobile ? MOBILE_MAX_COLS : Infinity).forEach((cell, i) => figures.push(figureFor(list[i], cell, area, mobile)))
+    gridCells(body, list.length, mobile ? MOBILE_MAX_COLS : Infinity, mobile).forEach((cell, i) => figures.push(figureFor(list[i], cell, area, mobile)))
   }
   return { figures, labels }
 }

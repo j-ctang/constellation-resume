@@ -114,6 +114,16 @@ describe('layoutSky on mobile', () => {
     }
   })
 
+  it('puts a lone constellation in the last row on the right, same row height', () => {
+    const forge = figures.filter(f => f.region === 'forge')
+    const bell = forge.find(f => f.id === 'cancelwatch')!
+    const shepherd = forge.find(f => f.id === 'tab-tamer')!
+    // Right of centre, but nudged left so it is not stacked directly under the right-hand neighbour.
+    expect(bell.hit.x + bell.hit.w / 2).toBeGreaterThan(a.x + a.w / 2)
+    expect(bell.hit.x).toBeLessThan(shepherd.hit.x - a.w * 0.05)
+    expect(bell.hit.y).toBeGreaterThan(forge[0].hit.y)
+  })
+
   it('bounds labels to the sky with an edge margin', () => {
     for (const f of figures) {
       expect(f.labelMinX).toBeGreaterThanOrEqual(a.x)

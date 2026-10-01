@@ -21,6 +21,11 @@ describe('EntryCard', () => {
     expect(screen.getByRole('link', { name: /view repository/i })).toHaveAttribute('href', 'https://example.com/r')
   })
 
+  it('links the organisation name when it has a URL', () => {
+    render(<EntryCard entry={{ ...full, orgUrl: 'https://acme.test' }} onBack={() => {}} />)
+    expect(screen.getByRole('link', { name: 'Acme' })).toHaveAttribute('href', 'https://acme.test')
+  })
+
   it('renders no link when absent', () => {
     render(<EntryCard entry={full} onBack={() => {}} />)
     expect(screen.queryByRole('link')).toBeNull()
@@ -29,7 +34,7 @@ describe('EntryCard', () => {
   it('shows poetic name, real title, fields, lore, bullets', () => {
     render(<EntryCard entry={full} onBack={() => {}} />)
     expect(screen.getByRole('heading', { name: 'The Test' })).toBeInTheDocument()
-    expect(screen.getByText('Intern · Acme · 2026')).toBeInTheDocument()
+    expect(document.querySelector('.card-real')).toHaveTextContent('Intern · Acme · 2026')
     expect(screen.getByText('Stack')).toBeInTheDocument()
     expect(screen.getByText('Some lore.')).toBeInTheDocument()
     expect(screen.getAllByRole('listitem')).toHaveLength(2)

@@ -1,6 +1,8 @@
-import { useRef } from 'react'
+import { useRef, type PointerEvent } from 'react'
 import Credit from './Credit'
 import { sheetGesture } from '../lib/sheet'
+import { useMoreBelow } from '../lib/useMoreBelow'
+import { SHEET_PEEK } from '../sky/layout'
 import { PROFILE, type SkyEntry } from '../sky.config'
 import EntryCard from './EntryCard'
 import IndexList from './IndexList'
@@ -20,8 +22,45 @@ export interface SidePanelProps {
 
 export default function SidePanel(props: SidePanelProps) {
   const { entries, selected, hotId, mobile, sheetOpen, onSelect, onHover, onBack, onSheetChange } = props
-  const drag = useRef<{ y: number; t: number } | null>(null)
+  const asideRef = useRef<HTMLElement>(null)
+  const indexRef = useRef<HTMLDivElement>(null)
+  const [moreBelow, checkMoreBelow] = useMoreBelow(indexRef)
+  const drag = useRef<{ y: number; t: number; moving: boolean } | null>(null)
   const swiped = useRef(false)
+
+  // Drag the sheet by its grip or header: it follows the finger, then snaps open or closed on release.
+  const startDrag = (e: PointerEvent<HTMLElement>) => {
+    if (!mobile || !(e.target as Element).closest('.grip, .panel-head')) return
+    drag.current = { y: e.clientY, t: e.timeStamp, moving: false }
+    swiped.current = false
+  }
+  const moveDrag = (e: PointerEvent<HTMLElement>) => {
+    const d = drag.current
+    const el = asideRef.current
+    if (!d || !el) return
+    const dy = e.clientY - d.y
+    if (!d.moving) {
+      if (Math.abs(dy) < 4) return
+      // Capture only once it is a real drag, so a plain tap still reaches the grip's click handler.
+      d.moving = true
+      el.setPointerCapture?.(e.pointerId)
+    }
+    el.style.transition = 'none'
+    el.style.transform = sheetOpen
+      ? `translateY(${Math.max(0, dy)}px)`
+      : `translateY(calc(100% - ${SHEET_PEEK}px + ${Math.min(0, dy)}px))`
+  }
+  const endDrag = (e: PointerEvent<HTMLElement>) => {
+    const d = drag.current
+    drag.current = null
+    const el = asideRef.current
+    if (!d) return
+    if (el) { el.style.transition = ''; el.style.transform = '' }
+    const g = sheetGesture(e.clientY - d.y, e.timeStamp - d.t)
+    if (g === 'none') return
+    swiped.current = true
+    if (g === 'close') { onBack(); onSheetChange(false) } else onSheetChange(true)
+  }
 
   const grip = mobile && (
     <button
@@ -29,18 +68,10 @@ export default function SidePanel(props: SidePanelProps) {
       className="grip"
       aria-label="Toggle catalogue"
       aria-expanded={sheetOpen}
-      onPointerDown={e => { drag.current = { y: e.clientY, t: e.timeStamp }; swiped.current = false }}
-      onPointerUp={e => {
-        if (!drag.current) return
-        const g = sheetGesture(e.clientY - drag.current.y, e.timeStamp - drag.current.t)
-        drag.current = null
-        if (g === 'none') return
-        swiped.current = true
-        if (g === 'close') { onBack(); onSheetChange(false) } else onSheetChange(true)
-      }}
       onClick={() => {
         if (swiped.current) { swiped.current = false; return }
-        onSheetChange(!sheetOpen)
+        // Closing the sheet dismisses the story, the same as dragging it down or tapping the sky.
+        if (sheetOpen) { onBack(); onSheetChange(false) } else onSheetChange(true)
       }}
     >
       <span className="grip-bar" aria-hidden="true" />
@@ -49,7 +80,15 @@ export default function SidePanel(props: SidePanelProps) {
   )
 
   return (
-    <aside className={`panel${mobile ? ' sheet' : ''}${mobile && sheetOpen ? ' open' : ''}`} aria-label="Resume panel">
+    <aside
+      ref={asideRef}
+      className={`panel${mobile ? ' sheet' : ''}${mobile && sheetOpen ? ' open' : ''}`}
+      aria-label="Resume panel"
+      onPointerDown={startDrag}
+      onPointerMove={moveDrag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
       {grip}
       <div className="panel-inner" inert={mobile && !sheetOpen}>
       {selected ? (
@@ -57,8 +96,11 @@ export default function SidePanel(props: SidePanelProps) {
       ) : (
         <>
           <IntroCard />
-          <div className="panel-body">
-            <IndexList entries={entries} hotId={hotId} onSelect={onSelect} onHover={onHover} />
+          <div className="index-wrap">
+            <div className={`panel-body${moreBelow ? ' has-more' : ''}`} ref={indexRef} onScroll={checkMoreBelow}>
+              <IndexList entries={entries} hotId={hotId} onSelect={onSelect} onHover={onHover} />
+            </div>
+            {moreBelow && <p className="more-below" aria-hidden="true">More below ↓</p>}
           </div>
           <div className="panel-foot">
             <p>Hover a name to light its figure; select it to read the entry.</p>

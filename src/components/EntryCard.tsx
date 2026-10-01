@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { REGIONS, type SkyEntry } from '../sky.config'
-import { realTitle } from '../lib/format'
+import RealTitle from './RealTitle'
 import { Ornament } from './IntroCard'
 
 export default function EntryCard({ entry, onBack }: { entry: SkyEntry; onBack: () => void }) {
@@ -10,12 +10,13 @@ export default function EntryCard({ entry, onBack }: { entry: SkyEntry; onBack: 
   return (
     <article className="card" aria-labelledby={`card-${entry.id}`}>
       <div className="panel-head">
+        <button type="button" className="card-back" onClick={onBack} aria-label="Return to catalogue">‹ Catalogue</button>
         <p className="kick">{region?.name}</p>
         <h2 id={`card-${entry.id}`} ref={headingRef} tabIndex={-1}>{entry.poeticName}</h2>
         <Ornament />
       </div>
       <div className="panel-body">
-        <p className="card-real">{realTitle(entry)}</p>
+        <p className="card-real"><RealTitle entry={entry} /></p>
         {entry.fields.length > 0 && (
           <dl className="fields">
             {entry.fields.map(f => (
@@ -37,9 +38,6 @@ export default function EntryCard({ entry, onBack }: { entry: SkyEntry; onBack: 
             <a href={entry.link.href} target="_blank" rel="noreferrer">{entry.link.label} ↗</a>
           </p>
         )}
-      </div>
-      <div className="panel-foot">
-        <button type="button" className="tool" onClick={onBack}>← Return to catalogue</button>
       </div>
     </article>
   )

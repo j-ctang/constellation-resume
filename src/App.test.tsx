@@ -12,6 +12,49 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: /justin tang/i })).toBeInTheDocument()
   })
 
+  it('keeps contact links visible in the masthead while a story is open', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(within(screen.getByRole('navigation', { name: /index of constellations/i })).getByRole('button', { name: /the mimic/i }))
+    const contact = screen.getByRole('list', { name: /contact/i })
+    expect(within(contact).getByRole('link', { name: /email/i })).toHaveAttribute('href', 'mailto:jstn.c.tang@gmail.com')
+    expect(within(contact).getByRole('link', { name: /github/i })).toHaveAttribute('href', 'https://github.com/j-ctang')
+  })
+
+  it('puts the return-to-catalogue button at the top of the story', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await user.click(within(screen.getByRole('navigation', { name: /index of constellations/i })).getByRole('button', { name: /the mimic/i }))
+    const head = document.querySelector('.card .panel-head')!
+    expect(within(head as HTMLElement).getByRole('button', { name: /return to catalogue/i })).toBeInTheDocument()
+  })
+
+  it('shows a "more below" cue on the catalogue until it is scrolled to the end', () => {
+    const sh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight')
+    const ch = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => 1000 })
+    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 300 })
+    try {
+      render(<App />)
+      expect(screen.getByText(/more below/i)).toBeInTheDocument()
+      const body = screen.getByRole('navigation', { name: /index of constellations/i }).closest('.panel-body')!
+      body.scrollTop = 700
+      fireEvent.scroll(body)
+      expect(screen.queryByText(/more below/i)).toBeNull()
+    } finally {
+      // jsdom defines these on Element.prototype, so the HTMLElement overrides are removed, not restored.
+      if (sh) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', sh)
+      else delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
+      if (ch) Object.defineProperty(HTMLElement.prototype, 'clientHeight', ch)
+      else delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
+    }
+  })
+
+  it('shows no cue when the catalogue fits', () => {
+    render(<App />)
+    expect(screen.queryByText(/more below/i)).toBeNull()
+  })
+
   it('lists constellations grouped by region', () => {
     render(<App />)
     const nav = index()
@@ -24,7 +67,8 @@ describe('App', () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(within(index()).getByRole('button', { name: /the patient hand/i }))
-    expect(screen.getByText('Software Engineer Intern · MakerMods · Jul 2026 – Sep 2026')).toBeInTheDocument()
+    expect(document.querySelector('.card-real')).toHaveTextContent('Software Engineer Intern · MakerMods · Jul 2026 – Sep 2026')
+    expect(screen.getByRole('link', { name: 'MakerMods' })).toHaveAttribute('href', 'https://www.makermods.ai')
     await user.click(screen.getByRole('button', { name: /return to catalogue/i }))
     expect(index()).toBeInTheDocument()
   })
@@ -170,6 +214,45 @@ describe('App on mobile', () => {
     expect(nav().closest('[inert]')).not.toBeNull()
     await user.click(screen.getByRole('button', { name: /toggle catalogue/i }))
     expect(nav().closest('[inert]')).toBeNull()
+  })
+
+  it('drags the open sheet with the finger and closes it when released low enough', async () => {
+    mockMobile()
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(within(screen.getByRole('group', { name: 'Constellations' })).getAllByRole('button')[0])
+    const sheet = container.querySelector<HTMLElement>('aside.sheet')!
+    const handle = sheet.querySelector('.card .panel-head')!
+    fireEvent.pointerDown(handle, { clientY: 400, pointerId: 1 })
+    fireEvent.pointerMove(handle, { clientY: 480, pointerId: 1 })
+    expect(sheet.style.transform).toBe('translateY(80px)')
+    fireEvent.pointerUp(handle, { clientY: 520, pointerId: 1 })
+    expect(sheet.style.transform).toBe('')
+    expect(sheet).not.toHaveClass('open')
+  })
+
+  it('snaps the sheet back open after a short drag', async () => {
+    mockMobile()
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    await user.click(within(screen.getByRole('group', { name: 'Constellations' })).getAllByRole('button')[0])
+    const sheet = container.querySelector<HTMLElement>('aside.sheet')!
+    const grip = screen.getByRole('button', { name: /toggle catalogue/i })
+    fireEvent.pointerDown(grip, { clientY: 400, pointerId: 1 })
+    fireEvent.pointerMove(grip, { clientY: 410, pointerId: 1 })
+    fireEvent.pointerUp(grip, { clientY: 410, pointerId: 1, timeStamp: 10000 })
+    expect(sheet).toHaveClass('open')
+  })
+
+  it('dismisses the story when the sheet is closed with the grip', async () => {
+    mockMobile()
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    const sky = screen.getByRole('group', { name: 'Constellations' })
+    await user.click(within(sky).getAllByRole('button')[0])
+    await user.click(screen.getByRole('button', { name: /toggle catalogue/i }))
+    expect(container.querySelector('aside.sheet')).not.toHaveClass('open')
+    expect(within(sky).getAllByRole('button')[0]).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('grip toggles the sheet to show the index', async () => {

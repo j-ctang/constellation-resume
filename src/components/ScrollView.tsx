@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import Credit from './Credit'
 import { PROFILE, type SkyEntry } from '../sky.config'
 import { groupByRegion } from '../lib/regions'
-import { realTitle } from '../lib/format'
+import RealTitle from './RealTitle'
 
 export default function ScrollView({ entries, onBack }: { entries: SkyEntry[]; onBack: () => void }) {
   const headRef = useRef<HTMLHeadingElement>(null)
@@ -26,7 +26,7 @@ export default function ScrollView({ entries, onBack }: { entries: SkyEntry[]; o
           <h2 id={`sec-${region.id}`}>{region.section} <small>{region.name}</small></h2>
           {list.map(e => (
             <article key={e.id} aria-labelledby={`art-${e.id}`}>
-              <h3 id={`art-${e.id}`}>{realTitle(e)}</h3>
+              <h3 id={`art-${e.id}`}><RealTitle entry={e} /></h3>
               {e.fields.length > 0 && (
                 <dl className="fields">
                   {e.fields.map(f => (

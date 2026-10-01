@@ -17,13 +17,6 @@ export default function IntroCard() {
       <p className="kick">Catalogus</p>
       <h2>{PROFILE.role}</h2>
       <p className="lat">{PROFILE.bio}</p>
-      <ul className="links">
-        {PROFILE.links.map(l => (
-          <li key={l.href}>
-            <a href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noreferrer">{l.label}</a>
-          </li>
-        ))}
-      </ul>
       <Ornament />
     </div>
   )
