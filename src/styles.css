@@ -16,10 +16,17 @@
 * { box-sizing: border-box }
 html, body, #root { margin: 0; height: 100% }
 body {
-  background: linear-gradient(180deg, var(--night0), var(--night1));
+  background: var(--night0);
   color: var(--text);
   font-family: var(--serif);
   -webkit-font-smoothing: antialiased;
+}
+/* Fixed backdrop matching the sky canvas (buildBackground) so long pages don't tile the gradient. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle farthest-corner at 42% 45%, rgba(40, 52, 120, .22), rgba(10, 14, 40, 0) 55%, rgba(2, 3, 10, .65)),
+    linear-gradient(166deg, #060818, #141a3d);
 }
 .app { position: fixed; inset: 0; overflow: hidden }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
@@ -173,13 +180,46 @@ body {
 .scroll .fields, .scroll .bullets { margin-left: 0 }
 .scroll-poetic { color: var(--muted); font-size: 14px; margin: 6px 0 0 }
 
+@media screen { .print-only { display: none } }
 @media print {
   body { background: #fff; color: #000 }
+  body::before { display: none }
   .scroll-bar { display: none }
   .scroll { max-width: none; padding: 0 }
   .scroll h1, .scroll h2, .scroll h3, .scroll-role, .fields dt, .fields dd, .bullets, .scroll-poetic { color: #000 }
   .scroll h2, .scroll-head { border-color: #999 }
   .links a { color: #000 }
+  @page { size: letter; margin: 0.5in }
+  .scroll { font-size: 10pt; line-height: 1.35 }
+  .scroll-head h1 { font-size: 26px }
+  .scroll section { margin-top: 12px }
+  .scroll h2 { margin: 0 0 4px; padding-bottom: 3px }
+  .scroll article { margin: 8px 0 }
+  .scroll h3 { font-size: 13px; margin-bottom: 3px }
+  .scroll .bullets { margin: 3px 0 }
+  .scroll .bullets li { margin: 1px 0 }
+  .scroll .entry-link { margin-top: 3px }
+  .scroll-poetic { font-size: 9.5pt; margin-top: 2px }
+  .scroll-lore { display: none }
+  .scroll .fields { gap: 0 12px; margin-bottom: 4px; font-size: 9.5pt; line-height: 1.3 }
+  .scroll .fields dt { font-size: 7.5pt; padding-top: 1px }
+  .scroll-head p { margin: 4px 0 }
+  .print-only { display: block }
+  .scroll-head { border-bottom: 0; padding-bottom: 8px }
+  .sky-band { display: block; width: 100%; height: auto; margin-bottom: 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact }
+  .sky-band-figs line { stroke: #e8c872; stroke-width: 1.2; opacity: .8 }
+  .sky-band-figs circle { fill: #fff4de }
+  .scroll-caption { margin: 0 0 8px; font-style: italic; color: #a8842e; font-size: 12px; letter-spacing: .08em }
+  .scroll article { position: relative; padding-left: 52px }
+  .scroll h2, .scroll h3 { break-after: avoid }
+  .mini-fig { position: absolute; left: 0; top: 2px }
+  .mini-fig line { stroke: #b8923a; stroke-width: 1.3; vector-effect: non-scaling-stroke }
+  .mini-fig circle { fill: #8a6a1f }
+  .scroll h3 a { color: #000 }
+  .scroll .entry-link a { color: #8a6a1f }
+  .scroll .scroll-poetic, .scroll-poetic em { color: #a8842e }
+  .scroll-teaser { margin-top: 28px; padding-top: 10px; border-top: 1px solid #c9a95a; text-align: center; color: #a8842e; font-size: 13px }
+  .scroll-teaser a { color: #a8842e }
 }
 
 .grip { display: none }
