@@ -28,6 +28,11 @@ describe('sky.config', () => {
     }
   })
 
+  it('lists the robot arms worked with at MakerMods', () => {
+    const arms = ENTRIES.find(e => e.id === 'makermods')!.fields.find(f => f.label === 'Robot arms')!
+    expect(arms.value).toBe('Metal Arm · MakerArm · Custom SO-101')
+  })
+
   it('points the PDF at the base path', () => {
     expect(PROFILE.pdfUrl).toMatch(/resume\.pdf$/)
   })

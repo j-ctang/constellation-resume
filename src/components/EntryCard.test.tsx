@@ -26,6 +26,17 @@ describe('EntryCard', () => {
     expect(screen.getByRole('link', { name: 'Acme' })).toHaveAttribute('href', 'https://acme.test')
   })
 
+  it('shows the entry photo with its caption', () => {
+    render(<EntryCard entry={{ ...full, image: { src: '/arm.jpg', alt: 'A robot arm', caption: 'Metal Arm' } }} onBack={() => {}} />)
+    expect(screen.getByRole('img', { name: 'A robot arm' })).toHaveAttribute('src', '/arm.jpg')
+    expect(screen.getByText('Metal Arm')).toBeInTheDocument()
+  })
+
+  it('omits the return button when told to', () => {
+    render(<EntryCard entry={full} onBack={() => {}} showBack={false} />)
+    expect(screen.queryByRole('button', { name: /return to catalogue/i })).toBeNull()
+  })
+
   it('renders no link when absent', () => {
     render(<EntryCard entry={full} onBack={() => {}} />)
     expect(screen.queryByRole('link')).toBeNull()

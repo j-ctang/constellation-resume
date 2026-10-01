@@ -58,20 +58,23 @@ export function drawRegionLabel(ctx: CanvasRenderingContext2D, l: RegionLabel, a
   ctx.fillText(l.section, l.at.x, l.at.y + 15)
 }
 
-export interface FigureStyle { reveal: number; lit: boolean; dim: boolean }
+/** lit and dim run 0..1 so hover emphasis can fade in and out. */
+export interface FigureStyle { reveal: number; lit: number; dim: number }
+
+const mix = (a: number, b: number, t: number) => a + (b - a) * t
 
 export function drawFigure(ctx: CanvasRenderingContext2D, fig: Figure, label: string, st: FigureStyle) {
-  const ea = st.dim ? 0.35 : 1
+  const ea = mix(1, 0.35, st.dim)
   const rv = st.reveal
   const { x: cx, y: cy } = fig.center
 
   // halo wash + engraved dotted ring
   const wash = ctx.createRadialGradient(cx, cy, 0, cx, cy, fig.radius)
-  wash.addColorStop(0, gold((st.lit ? 0.12 : 0.05) * ea * rv))
+  wash.addColorStop(0, gold(mix(0.05, 0.12, st.lit) * ea * rv))
   wash.addColorStop(1, gold(0))
   ctx.fillStyle = wash
   ctx.beginPath(); ctx.arc(cx, cy, fig.radius, 0, TAU); ctx.fill()
-  ctx.strokeStyle = gold((st.lit ? 0.7 : 0.28) * ea * rv)
+  ctx.strokeStyle = gold(mix(0.28, 0.7, st.lit) * ea * rv)
   ctx.lineWidth = 0.8
   ctx.setLineDash([1.2, 3.4]); ctx.stroke(); ctx.setLineDash([])
 
@@ -83,9 +86,9 @@ export function drawFigure(ctx: CanvasRenderingContext2D, fig: Figure, label: st
     if (f <= 0) return
     const A = fig.stars[a], B = fig.stars[b]
     const x2 = A.x + (B.x - A.x) * f, y2 = A.y + (B.y - A.y) * f
-    ctx.strokeStyle = gold((st.lit ? 0.28 : 0.12) * ea); ctx.lineWidth = st.lit ? 6 : 4
+    ctx.strokeStyle = gold(mix(0.12, 0.28, st.lit) * ea); ctx.lineWidth = mix(4, 6, st.lit)
     line(ctx, A.x, A.y, x2, y2)
-    ctx.strokeStyle = st.lit ? `rgba(250,230,170,${ea})` : gold(0.88 * ea); ctx.lineWidth = st.lit ? 1.6 : 1.15
+    ctx.strokeStyle = `rgba(${Math.round(mix(232, 250, st.lit))},${Math.round(mix(200, 230, st.lit))},${Math.round(mix(114, 170, st.lit))},${mix(0.88, 1, st.lit) * ea})`; ctx.lineWidth = mix(1.15, 1.6, st.lit)
     line(ctx, A.x, A.y, x2, y2)
   })
 
@@ -107,7 +110,7 @@ export function drawFigure(ctx: CanvasRenderingContext2D, fig: Figure, label: st
   ctx.font = `${fig.compact ? 11 : 13}px ${SERIF}`
   ctx.letterSpacing = fig.compact ? '2.5px' : '4px'
   ctx.shadowColor = 'rgba(4,6,20,0.95)'; ctx.shadowBlur = 8
-  ctx.fillStyle = st.lit ? `rgba(255,238,190,${ea * la})` : `rgba(240,222,170,${0.92 * ea * la})`
+  ctx.fillStyle = `rgba(${Math.round(mix(240, 255, st.lit))},${Math.round(mix(222, 238, st.lit))},${Math.round(mix(170, 190, st.lit))},${mix(0.92, 1, st.lit) * ea * la})`
   const measure = (t: string) => ctx.measureText(t).width
   const lines = fitLabel(label.toUpperCase(), fig.labelMaxWidth, measure)
   const half = Math.max(...lines.map(measure)) / 2

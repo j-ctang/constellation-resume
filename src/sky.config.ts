@@ -12,6 +12,12 @@ export interface SkyLink {
   href: string
 }
 
+export interface SkyImage {
+  src: string
+  alt: string
+  caption: string
+}
+
 export interface SkyEntry {
   /** kebab-case, unique. Seeds the star layout, so renaming an id reshapes its constellation. */
   id: string
@@ -25,6 +31,8 @@ export interface SkyEntry {
   dates?: string
   fields: SkyField[]
   bullets: string[]
+  /** Optional photo shown under the title and fields. src is relative to public/. */
+  image?: SkyImage
   /** Optional link shown under the bullets, e.g. a repository. */
   link?: SkyLink
 }
@@ -57,6 +65,7 @@ export const PROFILE: Profile = {
   links: [
     { label: 'GitHub', href: 'https://github.com/j-ctang' },
     { label: 'Email', href: 'mailto:jstn.c.tang@gmail.com' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/justin-tang-812831438/' },
   ],
   pdfUrl: `${import.meta.env.BASE_URL}resume.pdf`,
 }
@@ -75,7 +84,13 @@ export const ENTRIES: SkyEntry[] = [
       { label: 'Type', value: 'Internship' },
       { label: 'Stack', value: 'Python · React · TypeScript · PyTorch · Hugging Face · LeRobot' },
       { label: 'Scope', value: 'Robot-learning platform across 3 robot arms' },
+      { label: 'Robot arms', value: 'Metal Arm · MakerArm · Custom SO-101' },
     ],
+    image: {
+      src: `${import.meta.env.BASE_URL}arms/metal-arm.jpg`,
+      alt: 'The MakerMods Metal Arm on a desk: a black robot arm with a wrist camera and a parallel gripper',
+      caption: 'The Metal Arm',
+    },
     bullets: [
       'Wired LeRobot CLI workflows (calibration, teleoperation, recording, training, deployment) into a no-code web dashboard',
       'Added DAgger-based coaching so users can take over a trained policy mid-rollout and feed corrections back into training',

@@ -243,21 +243,9 @@ body {
 .card-real a { color: var(--gold-hi); text-decoration: none; border-bottom: 1px solid var(--gold-faint) }
 .card-real a:hover { border-color: var(--gold) }
 
-/* back to catalogue: top-left of every story */
-.panel-head { position: relative }
-.card-back {
-  position: absolute; left: 14px; top: 12px; z-index: 1;
-  appearance: none; background: none; border: 1px solid rgba(232, 200, 114, .3); border-radius: 1px;
-  color: var(--gold-hi); font: inherit; font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
-  padding: 5px 8px; cursor: pointer;
-}
-.card-back:hover { border-color: var(--gold) }
-.card-back:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px }
-.card .panel-head { padding-top: 40px }
 @media (max-width: 760px) {
   .contact { gap: 14px; margin-top: 8px }
   .contact a { font-size: 10px; letter-spacing: .2em }
-  .panel.sheet .card .panel-head { padding-top: 36px }
 }
 
 /* catalogue scroll cue: fade + label while more constellations sit below the fold */
@@ -268,10 +256,17 @@ body {
           mask-image: linear-gradient(180deg, #000 calc(100% - 56px), transparent);
 }
 .more-below {
-  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); margin: 0; pointer-events: none;
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); margin: 0; cursor: pointer; font-family: inherit;
   font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--gold-hi);
   padding: 4px 10px; border: 1px solid rgba(232, 200, 114, .35); background: rgba(9, 12, 34, .85);
   animation: more-bob 1.8s ease-in-out infinite;
 }
 @keyframes more-bob { 50% { transform: translate(-50%, 3px) } }
 @media (prefers-reduced-motion: reduce) { .more-below { animation: none } }
+.more-below:hover { border-color: var(--gold) }
+.more-below:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3px }
+
+/* entry photo: framed like an atlas plate, between the facts and the lore */
+.entry-photo { margin: 4px 6px 16px; padding: 6px; border: 1px solid rgba(232, 200, 114, .3); background: rgba(9, 12, 34, .5) }
+.entry-photo img { display: block; width: 100%; height: auto; max-height: 300px; object-fit: contain; background: rgba(6, 8, 24, .6) }
+.entry-photo figcaption { margin-top: 6px; font-size: 11.5px; font-style: italic; color: var(--muted); text-align: center }

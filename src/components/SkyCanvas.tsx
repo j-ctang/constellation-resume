@@ -3,7 +3,7 @@ import type { SkyEntry } from '../sky.config'
 import { realTitle } from '../lib/format'
 import { backgroundStars, emptySpot, layoutSky, skyArea } from '../sky/layout'
 import { drawingReducer, initialDrawing } from '../sky/drawing'
-import { figureHighlight } from '../sky/highlight'
+import { approach, figureHighlight } from '../sky/highlight'
 import { buildBackground, drawBgStars, drawFigure, drawPulse, drawRegionLabel, drawUser } from '../sky/render'
 
 export interface SkyCanvasProps {
@@ -20,6 +20,8 @@ export interface SkyCanvasProps {
 }
 
 const STAGGER_MS = 220
+// How long hover takes to fade a constellation up, and the others down.
+const HIGHLIGHT_MS = 450
 const REVEAL_MS = 1600
 
 export default function SkyCanvas(props: SkyCanvasProps) {
@@ -63,10 +65,20 @@ export default function SkyCanvas(props: SkyCanvasProps) {
     canvas.height = Math.round(size.h * dpr)
     const bg = buildBackground(size.w, size.h, dpr)
     const start = performance.now()
+    let last = start
+    const emphasis = new Map<string, { lit: number; dim: number }>()
     let raf = 0
+    const ease = (id: string, target: { lit: boolean; dim: boolean }, dt: number, ms: number) => {
+      const prev = emphasis.get(id) ?? { lit: 0, dim: 0 }
+      const next = { lit: approach(prev.lit, +target.lit, dt, ms), dim: approach(prev.dim, +target.dim, dt, ms) }
+      emphasis.set(id, next)
+      return next
+    }
     const frame = (now: number) => {
       const { props: p, figures: figs, labels: labs, bgStars: stars, pulseAt: pulse, byId: map, drawing: user } = live.current
       const t = now - start
+      const dt = Math.max(0, now - last)
+      last = now
       ctx.setTransform(1, 0, 0, 1, 0, 0)
       ctx.drawImage(bg, 0, 0)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
@@ -77,7 +89,7 @@ export default function SkyCanvas(props: SkyCanvasProps) {
         const reveal = p.reducedMotion ? 1 : Math.min(1, Math.max(0, (t - 300 - i * STAGGER_MS) / REVEAL_MS))
         drawFigure(ctx, f, map.get(f.id)?.poeticName ?? '', {
           reveal,
-          ...figureHighlight(f.id, p.hotId, p.selectedId),
+          ...ease(f.id, figureHighlight(f.id, p.hotId, p.selectedId), dt, p.reducedMotion ? 0 : HIGHLIGHT_MS),
         })
       })
       drawUser(ctx, user, now, p.reducedMotion)

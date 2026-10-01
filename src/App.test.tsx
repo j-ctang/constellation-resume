@@ -21,33 +21,85 @@ describe('App', () => {
     expect(within(contact).getByRole('link', { name: /github/i })).toHaveAttribute('href', 'https://github.com/j-ctang')
   })
 
-  it('puts the return-to-catalogue button at the top of the story', async () => {
+  it('lists LinkedIn among the contact links', () => {
+    render(<App />)
+    const contact = screen.getByRole('list', { name: /contact/i })
+    expect(within(contact).getByRole('link', { name: /linkedin/i })).toHaveAttribute('href', 'https://www.linkedin.com/in/justin-tang-812831438/')
+  })
+
+  it('keeps the story header free of buttons; desktop returns from the footer', async () => {
     const user = userEvent.setup()
     render(<App />)
     await user.click(within(screen.getByRole('navigation', { name: /index of constellations/i })).getByRole('button', { name: /the mimic/i }))
-    const head = document.querySelector('.card .panel-head')!
-    expect(within(head as HTMLElement).getByRole('button', { name: /return to catalogue/i })).toBeInTheDocument()
+    const head = document.querySelector('.card .panel-head') as HTMLElement
+    expect(within(head).queryByRole('button')).toBeNull()
+    const foot = document.querySelector('.card .panel-foot') as HTMLElement
+    expect(within(foot).getByRole('button', { name: /return to catalogue/i })).toBeInTheDocument()
   })
 
-  it('shows a "more below" cue on the catalogue until it is scrolled to the end', () => {
-    const sh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight')
-    const ch = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight')
-    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => 1000 })
-    Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 300 })
-    try {
-      render(<App />)
-      expect(screen.getByText(/more below/i)).toBeInTheDocument()
-      const body = screen.getByRole('navigation', { name: /index of constellations/i }).closest('.panel-body')!
-      body.scrollTop = 700
-      fireEvent.scroll(body)
-      expect(screen.queryByText(/more below/i)).toBeNull()
-    } finally {
-      // jsdom defines these on Element.prototype, so the HTMLElement overrides are removed, not restored.
-      if (sh) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', sh)
-      else delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
-      if (ch) Object.defineProperty(HTMLElement.prototype, 'clientHeight', ch)
-      else delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
+  describe('"More below" cue', () => {
+    let restore: () => void = () => {}
+    const fakeOverflow = () => {
+      Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get: () => 1000 })
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => 300 })
+      // jsdom defines these on Element.prototype, so the HTMLElement overrides are deleted afterwards.
+      restore = () => {
+        delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight
+        delete (HTMLElement.prototype as { clientHeight?: number }).clientHeight
+      }
     }
+    afterEach(() => { restore(); vi.restoreAllMocks() })
+    const body = () => screen.getByRole('navigation', { name: /index of constellations/i }).closest('.panel-body') as HTMLElement
+    const scrollTo = (top: number) => { body().scrollTop = top; fireEvent.scroll(body()) }
+
+    it('shows while more constellations sit below the fold', () => {
+      fakeOverflow()
+      render(<App />)
+      expect(screen.getByRole('button', { name: /more below/i })).toBeInTheDocument()
+    })
+
+    it('stays gone after the reader reaches the bottom once, even after scrolling back up', () => {
+      fakeOverflow()
+      const { unmount } = render(<App />)
+      scrollTo(700)
+      expect(screen.queryByRole('button', { name: /more below/i })).toBeNull()
+      scrollTo(100)
+      expect(screen.queryByRole('button', { name: /more below/i })).toBeNull()
+      unmount()
+      render(<App />)
+      expect(screen.queryByRole('button', { name: /more below/i })).toBeNull()
+    })
+
+    it('slowly scrolls to the bottom when pressed, then never shows again', () => {
+      fakeOverflow()
+      const frames: FrameRequestCallback[] = []
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => { frames.push(cb); return frames.length })
+      const { unmount } = render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: /more below/i }))
+      expect(screen.queryByRole('button', { name: /more below/i })).toBeNull()
+      let t = 0
+      while (frames.length && t < 10000) { t += 16; frames.shift()!(t) }
+      expect(body().scrollTop).toBe(700)
+      unmount()
+      render(<App />)
+      expect(screen.queryByRole('button', { name: /more below/i })).toBeNull()
+    })
+
+    it('stops the slow scroll as soon as the reader touches, wheels, or presses a key', () => {
+      fakeOverflow()
+      const frames: FrameRequestCallback[] = []
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation(cb => { frames.push(cb); return frames.length })
+      render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: /more below/i }))
+      frames.shift()!(0)
+      frames.shift()!(200)
+      const stoppedAt = body().scrollTop
+      expect(stoppedAt).toBeGreaterThan(0)
+      expect(stoppedAt).toBeLessThan(700)
+      fireEvent.wheel(body(), { deltaY: -40 })
+      while (frames.length) frames.shift()!(5000)
+      expect(body().scrollTop).toBe(stoppedAt)
+    })
   })
 
   it('shows no cue when the catalogue fits', () => {

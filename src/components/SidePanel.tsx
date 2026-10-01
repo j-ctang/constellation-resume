@@ -24,7 +24,7 @@ export default function SidePanel(props: SidePanelProps) {
   const { entries, selected, hotId, mobile, sheetOpen, onSelect, onHover, onBack, onSheetChange } = props
   const asideRef = useRef<HTMLElement>(null)
   const indexRef = useRef<HTMLDivElement>(null)
-  const [moreBelow, checkMoreBelow] = useMoreBelow(indexRef)
+  const moreBelow = useMoreBelow(indexRef)
   const drag = useRef<{ y: number; t: number; moving: boolean } | null>(null)
   const swiped = useRef(false)
 
@@ -92,15 +92,17 @@ export default function SidePanel(props: SidePanelProps) {
       {grip}
       <div className="panel-inner" inert={mobile && !sheetOpen}>
       {selected ? (
-        <EntryCard entry={selected} onBack={onBack} />
+        <EntryCard entry={selected} onBack={onBack} showBack={!mobile} />
       ) : (
         <>
           <IntroCard />
           <div className="index-wrap">
-            <div className={`panel-body${moreBelow ? ' has-more' : ''}`} ref={indexRef} onScroll={checkMoreBelow}>
+            <div className={`panel-body${moreBelow.show ? ' has-more' : ''}`} ref={indexRef} onScroll={moreBelow.check}>
               <IndexList entries={entries} hotId={hotId} onSelect={onSelect} onHover={onHover} />
             </div>
-            {moreBelow && <p className="more-below" aria-hidden="true">More below ↓</p>}
+            {moreBelow.show && (
+              <button type="button" className="more-below" onClick={moreBelow.scrollToEnd}>More below ↓</button>
+            )}
           </div>
           <div className="panel-foot">
             <p>Hover a name to light its figure; select it to read the entry.</p>
