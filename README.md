@@ -4,22 +4,6 @@ Justin Tang's resume as an interactive star chart. Each job, project, school, an
 
 Live site: https://j-ctang.github.io/constellation-resume/
 
-## Editing content
-
-All resume content lives in `src/sky.config.ts`. Add, remove, or edit entries there; components read it generically. An entry's `id` seeds its star layout, so renaming an id reshapes its constellation.
-
-## Development
-
-```bash
-npm install
-npm run dev      # http://localhost:5173/constellation-resume/
-npm test
-npm run lint
-npm run build
-```
-
-Pushes to `main` deploy to GitHub Pages via `.github/workflows/deploy.yml`.
-
 ## Credits
 
 - Visual design adapted from **Asterism — Draw Your Own Sky** by [MiaAI-Lab](https://github.com/MiaAI-Lab/Claude-Opus-5.5-100-HTML-Files).
